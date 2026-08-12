@@ -1,0 +1,12 @@
+= vulkan-template
+
+== TODO
+* [ ] package presets
+* [ ] test presets
+* [ ] sans
+* [ ] third party cmake flags
+* [ ] compile flags co mozna ugotowac
+* [ ] kodzik do cpp module (.cppm)
+* [ ] moltenVK support
+* [ ] do kazdej liczby dodac U, ... (np. 12U, 9Z)
+* [ ] slangc flags

@@ -1,0 +1,89 @@
+{
+    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "version": 12,
+    "cmakeMinimumRequired": {
+        "major": 4,
+        "minor": 4,
+        "patch": 2
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "default configure",
+            "inherits": ["base"],
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_LINKER_TYPE": "LLD",
+                "CMAKE_CXX_FLAGS_DEBUG": "-g3",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_EXPERIMENTAL_CXX_IMPORT_STD": "f35a9ac6-8463-4d38-8eec-5d6008153e7d"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "displayName": "default build",
+            "configurePreset": "default",
+            "jobs": 16
+        },
+        {
+            "name": "default-debug",
+            "displayName": "default debug build",
+            "inherits": ["default"],
+            "configuration": "Debug"
+        },
+        {
+            "name": "default-release",
+            "displayName": "default release build",
+            "inherits": ["default"],
+            "configuration": "Release"
+        }
+    ],
+    "workflowPresets": [
+        {
+            "name": "default",
+            "displayName": "default workflow",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "default"
+                },
+                {
+                    "type": "build",
+                    "name": "default"
+                }
+            ]
+        },
+        {
+            "name": "default-debug",
+            "displayName": "default debug workflow",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "default"
+                },
+                {
+                    "type": "build",
+                    "name": "default-debug"
+                }
+            ]
+        },
+        {
+            "name": "default-release",
+            "displayName": "default release workflow",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "default"
+                },
+                {
+                    "type": "build",
+                    "name": "default-release"
+                }
+            ]
+        }
+    ]
+}

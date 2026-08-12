@@ -1,0 +1,4 @@
+[submodule "vulkan-module"]
+	path = third-party/vulkan-module
+	url = git@github.com:Puszek997/vulkan-module.git
+    shallow = true

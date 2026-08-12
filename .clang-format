@@ -1,0 +1,21 @@
+BasedOnStyle: WebKit
+InsertNewlineAtEOF: true
+IndentPPDirectives: AfterHash
+AlignOperands: AlignAfterOperator
+BreakInheritanceList: BeforeComma
+AlignEscapedNewlines: LeftWithLastLine
+KeepEmptyLines:
+  AtStartOfBlock: false
+  AtStartOfFile: false
+IncludeBlocks: Regroup
+AlignAfterOpenBracket: true
+NamespaceIndentation: All
+BreakBeforeCloseBracketLoop: true
+BreakBeforeCloseBracketSwitch: true
+BreakBeforeTemplateCloser: true
+BreakAfterOpenBracketBracedList: true
+BreakAfterOpenBracketFunction: true
+BreakAfterOpenBracketIf: true
+BreakBeforeCloseBracketBracedList: true
+BreakBeforeCloseBracketFunction: true
+BreakBeforeCloseBracketIf: true

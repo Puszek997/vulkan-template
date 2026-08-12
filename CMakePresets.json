@@ -1,0 +1,41 @@
+{
+    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "version": 12,
+    "cmakeMinimumRequired": {
+        "major": 4,
+        "minor": 4,
+        "patch": 2
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "displayName": "base configure",
+            "generator": "Ninja",
+            "binaryDir": "build",
+            "installDir": "out"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "base",
+            "displayName": "base build",
+            "configurePreset": "base"
+        }
+    ],
+    "workflowPresets": [
+        {
+            "name": "base",
+            "displayName": "base workflow",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "base"
+                },
+                {
+                    "type": "build",
+                    "name": "base"
+                }
+            ]
+        }
+    ]
+}
