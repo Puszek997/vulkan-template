@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 4.4.2)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 project(
     vulkan-template
     VERSION      0.1.0
@@ -7,6 +9,8 @@ project(
     HOMEPAGE_URL ""
     LANGUAGES    CXX
 )
+
+include(VulkanTemplateConfig)
 
 add_subdirectory(third-party)
 
@@ -65,6 +69,9 @@ target_sources(
 target_compile_options(
     ${PROJECT_NAME}
     PRIVATE
+    ${VULKAN_TEMPLATE_DEFINITIONS}
+    ${VULKAN_TEMPLATE_FLAGS}
+    ${VULKAN_TEMPLATE_WARNINGS}
 )
 
 target_link_options(
