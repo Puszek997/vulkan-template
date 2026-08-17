@@ -11,8 +11,7 @@ project(
 )
 
 include(VulkanTemplateConfig)
-
-add_subdirectory(third-party)
+add_subdirectory(third-party EXCLUDE_FROM_ALL SYSTEM)
 
 add_executable(${PROJECT_NAME})
 
