@@ -12,3 +12,4 @@
 * [ ] slangc flags
 * [ ] "" w cmake
 * [ ] change na :: w cmake?
+* [ ] change names of submodules?
