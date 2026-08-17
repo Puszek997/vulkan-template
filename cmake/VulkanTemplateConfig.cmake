@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(
     VULKAN_TEMPLATE_DEFINITIONS
     $<$<CONFIG:Release>:-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
