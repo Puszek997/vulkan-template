@@ -13,18 +13,18 @@ add_subdirectory(third-party)
 add_executable(${PROJECT_NAME})
 
 include(CheckPIESupported)
-check_pie_supported(OUTPUT_VARIABLE pie_output LANGUAGES CXX)
+check_pie_supported(OUTPUT_VARIABLE PIE_OUTPUT LANGUAGES CXX)
 if(NOT CMAKE_CXX_LINK_PIE_SUPPORTED)
     message(
         WARNING
-        "PIE is not supported at link time: ${pie_output}"
+        "PIE is not supported at link time: ${PIE_OUTPUT}"
         "PIE link options will not be passed to linker"
     )
 endif()
 
 include(CheckIPOSupported)
-check_ipo_supported(RESULT result OUTPUT ipo_output LANGUAGES CXX)
-if(result)
+check_ipo_supported(RESULT IPO_RESULT OUTPUT IPO_OUTPUT LANGUAGES CXX)
+if(IPO_RESULT)
     set_property(
         TARGET
         ${PROJECT_NAME}
@@ -34,7 +34,7 @@ if(result)
 else()
     message(
         WARNING
-        "IPO is not supported: ${ipo_output}"
+        "IPO is not supported: ${IPO_OUTPUT}"
         "IPO link options will not be passed to linker"
     )
 endif()
@@ -65,9 +65,6 @@ target_sources(
 target_compile_options(
     ${PROJECT_NAME}
     PRIVATE
-    ${compile_definitions}
-    ${compile_flags}
-    ${compile_warnings}
 )
 
 target_link_options(
@@ -81,6 +78,7 @@ target_link_libraries(
     PRIVATE
     vulkan-module
 )
+add_dependencies(${PROJECT_NAME} slang-module)
 
 include(GNUInstallDirs)
 install(
