@@ -2,3 +2,7 @@
 	path = third-party/vulkan-module
 	url = git@github.com:Puszek997/vulkan-module.git
     shallow = true
+[submodule "slang-module"]
+	path = third-party/slang-module
+	url = git@github.com:Puszek997/slang-module.git
+    shallow = true
