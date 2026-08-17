@@ -13,3 +13,5 @@
 * [ ] "" w cmake
 * [ ] change na :: w cmake?
 * [ ] change names of submodules?
+* [ ] more options to configure *-module like vulkan-module definitions / slang-module slangc flags, default options
+* [ ] rewrite VulkanTemplateConfig.cmake
