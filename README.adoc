@@ -10,3 +10,4 @@
 * [ ] moltenVK support
 * [ ] do kazdej liczby dodac U, ... (np. 12U, 9Z)
 * [ ] slangc flags
+* [ ] "" w cmake

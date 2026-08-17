@@ -11,8 +11,8 @@ project(
 )
 
 include(VulkanTemplateConfig)
-# add_subdirectory(third-party/SFML EXCLUDE_FROM_ALL SYSTEM)
-add_subdirectory(third-party/slang-module EXCLUDE_FROM_ALL)
+add_subdirectory(third-party/SFML EXCLUDE_FROM_ALL SYSTEM)
+add_subdirectory(third-party/slang-module)
 add_subdirectory(third-party/vulkan-module EXCLUDE_FROM_ALL)
 
 add_executable(${PROJECT_NAME})
@@ -84,6 +84,7 @@ target_link_options(
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
+    SFML::Window
     vulkan-module
 )
 add_dependencies(${PROJECT_NAME} slang-module)
