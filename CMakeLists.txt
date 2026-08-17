@@ -12,8 +12,8 @@ project(
 
 include(VulkanTemplateConfig)
 # add_subdirectory(third-party/SFML EXCLUDE_FROM_ALL SYSTEM)
-add_subdirectory(third-party/slang-module EXCLUDE_FROM_ALL SYSTEM)
-add_subdirectory(third-party/vulkan-module EXCLUDE_FROM_ALL SYSTEM)
+add_subdirectory(third-party/slang-module EXCLUDE_FROM_ALL)
+add_subdirectory(third-party/vulkan-module EXCLUDE_FROM_ALL)
 
 add_executable(${PROJECT_NAME})
 
