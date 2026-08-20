@@ -1,5 +1,41 @@
 include_guard(GLOBAL)
 
+if(MSVC)
+set(
+    VULKAN_TEMPLATE_DEFINITIONS
+    ""
+)
+
+set(
+    VULKAN_TEMPLATE_FLAGS
+    ""
+)
+
+set(
+    VULKAN_TEMPLATE_WARNINGS
+    /W4
+    /w14242
+    /w14254
+    /w14263
+    /w14265
+    /w14287
+    /we4289
+    /w14296
+    /w14311
+    /w14545
+    /w14546
+    /w14547
+    /w14549
+    /w14555
+    /w14619
+    /w14640
+    /w14826
+    /w14905
+    /w14906
+    /w14928
+    /permissive-
+)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 set(
     VULKAN_TEMPLATE_DEFINITIONS
     $<$<CONFIG:Release>:-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
@@ -48,10 +84,8 @@ set(
     -Wassign-enum
     -Watomic-implicit-seq-cst
     -Watomic-properties
-    -Wbad-function-cast
     -Wbinary-literal
     -Wbind-to-temporary-copy
-    -Wc++-compat
     -Wcalled-once-parameter
     -Wcast-align
     -Wcast-function-type
@@ -66,7 +100,6 @@ set(
     -Wctad-maybe-unsupported
     -Wcuda-compat
     -Wdate-time
-    -Wdeclaration-after-statement
     -Wdecls-in-multiple-modules
     -Wdeprecated
     -Wdeprecated-implementations
@@ -117,8 +150,6 @@ set(
     -Wmicrosoft
     -Wmissing-include-dirs
     -Wmissing-noreturn
-    -Wmissing-prototypes
-    -Wmissing-variable-declarations
     -Wmodule-file-mapping-mismatch
     -Wms-bitfield-padding
     -Wnewline-eof
@@ -154,7 +185,6 @@ set(
     -Wreserved-identifier
     -Wreserved-user-defined-literal
     -Rsanitize-address
-    -Wselector
     -Wshadow-all
     -Wshadow-header
     -Wshift-bool
@@ -163,8 +193,6 @@ set(
     -Wsource-uses-openacc
     -Wspir-compat
     -Wstrict-potentially-direct-selector
-    -Wstrict-prototypes
-    -Wstrict-selector-match
     -Wsuggest-destructor-override
     -Wsuggest-override
     -Wsuper-class-method-mismatch
@@ -177,7 +205,6 @@ set(
     -Wthread-safety-pointer
     -Wthread-safety-verbose
     -Wunaligned-access
-    -Wundeclared-selector
     -Wundef
     -Wundef-prefix
     -Wundefined-func-template
@@ -200,6 +227,88 @@ set(
     -Wweak-vtables
     -Wzero-as-null-pointer-constant
 )
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+set(
+    VULKAN_TEMPLATE_DEFINITIONS
+    $<$<CONFIG:Release>:-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
+)
+
+set(
+    VULKAN_TEMPLATE_FLAGS
+    -pedantic-errors
+    -pipe
+    -fno-common
+
+    # -fno-rtti
+    # -fsafe-buffer-usage-suggestions
+    # -fno-exceptions
+
+    #ssf
+    -fstrict-flex-arrays=3
+    # -fstack-clash-protection
+    # -fstack-protector-strong
+    # -fcf-protection=full
+
+    # -Wl,-z,nodlopen -Wl,-z,noexecstack \
+    # -Wl,-z,relro -Wl,-z,now \
+    # -Wl,--as-needed -Wl,--no-copy-dt-needed-entries
+    # -D_GLIBCXX_ASSERTIONS \
+    # -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST \
+
+    #redhat
+    # -mshstk
+    # -fsplit-stack
+    # -fstack-limit-register
+    # -fstack-limit-symbol
+    # -fno-stack-array
+)
+
+set(
+    VULKAN_TEMPLATE_WARNINGS
+    -Wall
+    -Wextra
+    -Walloca
+    -Wcast-align
+    -Wcast-function-type
+    -Wcast-qual
+    -Wctad-maybe-unsupported
+    -Wdate-time
+    -Wdeprecated
+    -Wdouble-promotion
+    -Wexpansion-to-defined
+    -Wextra-semi
+    -Wfloat-equal
+    -Wformat-signedness
+    -Wformat=2
+    -Wimplicit-fallthrough
+    -Wmain
+    -Wmissing-include-dirs
+    -Wmissing-noreturn
+    -Wnon-virtual-dtor
+    -Wnrvo
+    -Wold-style-cast
+    -Wopenmp
+    -Wpacked
+    -Wpadded
+    -Wpedantic
+    -Wpointer-arith
+    -Wpragmas
+    -Wsuggest-override
+    -Wswitch-default
+    -Wswitch-enum
+    -Wundef
+    -Wunused-macros
+    -Wvariadic-macros
+    -Wvla
+    -Wzero-as-null-pointer-constant
+)
+endif()
+
+set(SFML_BUILD_WINDOW ON)
+set(SFML_BUILD_GRAPHICS OFF)
+set(SFML_BUILD_AUDIO OFF)
+set(SFML_BUILD_NETWORK OFF)
+set(SFML_ENABLE_PCH ON)
 
 set(
     SLANG_MODULE_SOURCES

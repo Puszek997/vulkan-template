@@ -4,14 +4,12 @@
 * [ ] package presets
 * [ ] test presets
 * [ ] sans
-* [ ] third party cmake flags
-* [ ] compile flags co mozna ugotowac
+* [ ] clang: flags, gcc: flags, warnings, msvc: flags, defs, warnings
 * [ ] kodzik do cpp module (.cppm)
 * [ ] moltenVK support
 * [ ] do kazdej liczby dodac U, ... (np. 12U, 9Z)
 * [ ] slangc flags
-* [ ] "" w cmake
 * [ ] change na :: w cmake?
 * [ ] change names of submodules?
 * [ ] more options to configure *-module like vulkan-module definitions / slang-module slangc flags, default options
-* [ ] rewrite VulkanTemplateConfig.cmake
+* [ ] cmake configure_file?
