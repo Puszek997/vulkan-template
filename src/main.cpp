@@ -84,7 +84,7 @@ concept VkToStringable = requires(T&& value) {
 
 template <typename T, typename CharT>
     requires VkToStringable<T> && CharType<CharT>
-struct std::formatter<T, CharT> : public std::formatter<const CharT*, CharT> {
+struct std::formatter<T, CharT> : public std::formatter<const CharT*, CharT> { // NOLINT(cert-dcl58-cpp, bugprone-std-namespace-modification)
     // TODO: puszek_997 - add constexpr after P3391R2 is implemented
     // TODO: puszek_997 - use macro for widen?
     template <typename Out>
@@ -102,7 +102,7 @@ struct std::formatter<T, CharT> : public std::formatter<const CharT*, CharT> {
 
 template <typename... Ts, typename CharT>
     requires CharType<CharT>
-struct std::formatter<std::variant<Ts...>, CharT> {
+struct std::formatter<std::variant<Ts...>, CharT> { // NOLINT(cert-dcl58-cpp, bugprone-std-namespace-modification)
     [[nodiscard]] static constexpr auto parse(
         const std::basic_format_parse_context<CharT>& context
     ) noexcept -> std::basic_format_parse_context<CharT>::iterator
@@ -130,6 +130,19 @@ struct std::formatter<std::variant<Ts...>, CharT> {
         );
     }
 };
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+[[nodiscard]] constexpr auto store_into(T& out) noexcept -> auto
+{
+    return [&out]<typename U>
+        requires std::assignable_from<T&, U>
+    (U&& value) constexpr noexcept(
+        std::is_nothrow_assignable_v<T&, U>
+    ) -> void {
+        out = std::forward<U>(value);
+    };
+}
 
 auto main() -> std::int32_t
 {
