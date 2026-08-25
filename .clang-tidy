@@ -28,7 +28,8 @@ CheckOptions:
   readability-identifier-naming.PrivateMemberCase: lower_case
   readability-identifier-naming.PublicMemberCase: lower_case
   readability-identifier-naming.EnumCase: CamelCase
-  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.ScopedEnumConstantCase: CamelCase
+  readability-identifier-naming.ScopedEnumConstantPrefix: "e"
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.UnionCase: CamelCase
