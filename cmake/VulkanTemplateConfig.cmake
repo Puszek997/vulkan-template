@@ -304,12 +304,6 @@ set(
 )
 endif()
 
-set(SFML_BUILD_WINDOW ON)
-set(SFML_BUILD_GRAPHICS OFF)
-set(SFML_BUILD_AUDIO OFF)
-set(SFML_BUILD_NETWORK OFF)
-set(SFML_ENABLE_PCH ON)
-
 set(
     SLANG_MODULE_SOURCES
     shaders/shader.slang

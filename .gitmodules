@@ -6,7 +6,3 @@
 	path = third-party/slang-module
 	url = git@github.com:Puszek997/slang-module.git
     shallow = true
-[submodule "SFML"]
-	path = third-party/SFML
-	url = git@github.com:SFML/SFML.git
-    shallow = true

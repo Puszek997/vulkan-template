@@ -82,7 +82,6 @@ target_link_options(
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
-    SFML::Window
     vulkan-module
 )
 add_dependencies(${PROJECT_NAME} slang-module)
