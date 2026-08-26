@@ -147,6 +147,12 @@ template <typename T>
     };
 }
 
+#ifdef NDEBUG
+inline constexpr bool ENABLE_VALIDATION_LAYERS { false };
+#else
+inline constexpr bool ENABLE_VALIDATION_LAYERS { true };
+#endif
+
 class Application {
 public:
     enum struct Result : std::uint8_t {
@@ -244,21 +250,42 @@ private:
             return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
         }
 
-        const std::vector<const char*> required_instance_extensions {
+        std::vector<const char*> required_instance_extensions {
             required_instance_extension_names,
             std::ranges::next(required_instance_extension_names, required_instance_extension_count)
         };
 
-        const vk::InstanceCreateInfo instance_create_info {
-            .pApplicationInfo = &APPLICATION_INFO,
-            .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
-            .ppEnabledExtensionNames = required_instance_extensions.data(),
-        };
+        if constexpr (ENABLE_VALIDATION_LAYERS) {
+            required_instance_extensions.emplace_back(vk::EXTDebugUtilsExtensionName);
 
-        return m_context
-            .createInstance(instance_create_info)
-            .transform(store_into(m_instance))
-            .transform_error(ApplicationError::to_error());
+            static constexpr std::array<const char*, 1> VALIDATION_LAYERS {
+                "VK_LAYER_KHRONOS_validation",
+            };
+
+            const vk::InstanceCreateInfo instance_create_info {
+                .pApplicationInfo = &APPLICATION_INFO,
+                .enabledLayerCount = static_cast<std::uint32_t>(VALIDATION_LAYERS.size()),
+                .ppEnabledLayerNames = VALIDATION_LAYERS.data(),
+                .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
+                .ppEnabledExtensionNames = required_instance_extensions.data(),
+            };
+
+            return m_context
+                .createInstance(instance_create_info)
+                .transform(store_into(m_instance))
+                .transform_error(ApplicationError::to_error());
+        } else {
+            const vk::InstanceCreateInfo instance_create_info {
+                .pApplicationInfo = &APPLICATION_INFO,
+                .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
+                .ppEnabledExtensionNames = required_instance_extensions.data(),
+            };
+
+            return m_context
+                .createInstance(instance_create_info)
+                .transform(store_into(m_instance))
+                .transform_error(ApplicationError::to_error());
+        }
     }
 
     GLFWwindow* m_window { nullptr };
