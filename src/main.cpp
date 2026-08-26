@@ -1,3 +1,4 @@
+#include <GLFW/glfw3.h>
 #include <cstdlib>
 
 import vulkan;
@@ -144,7 +145,92 @@ template <typename T>
     };
 }
 
+class Application {
+public:
+    enum struct Result : std::uint8_t {
+        eSuccess,
+        eError
+    };
+
+    using ApplicationError = Error<vk::Result, Result>;
+
+    explicit Application() noexcept
+    {
+        m_has_value = create_window()
+                          .and_then(std::bind_front(&Application::create_instance, this))
+                          .has_value();
+    }
+
+    Application(const Application&) = delete;
+    auto operator=(const Application&) -> Application& = delete;
+    Application(Application&&) noexcept = delete;
+    auto operator=(Application&&) noexcept -> Application& = delete;
+
+    ~Application() noexcept
+    {
+        glfwTerminate();
+    }
+
+private:
+    [[nodiscard]] auto create_window() noexcept -> std::expected<void, ApplicationError>
+    {
+        if (glfwInit() == GLFW_FALSE) {
+            return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+        }
+
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+        m_window = glfwCreateWindow(800, 600, "Hello Triangle", nullptr, nullptr);
+        if (m_window == nullptr) {
+            return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+        }
+
+        return std::expected<void, ApplicationError> { std::in_place };
+    }
+
+    [[nodiscard]] auto create_instance() noexcept -> std::expected<void, ApplicationError>
+    {
+        static constexpr vk::ApplicationInfo APPLICATION_INFO {
+            .pApplicationName = "Hello Triangle",
+            .applicationVersion = vk::makeVersion(0, 1, 0),
+            .pEngineName = "No Engine",
+            .engineVersion = vk::makeVersion(0, 1, 0),
+            .apiVersion = vk::ApiVersion14
+        };
+
+        std::uint32_t required_instance_extension_count { };
+        const char* const* const required_instance_extension_names { glfwGetRequiredInstanceExtensions(&required_instance_extension_count) };
+        if (required_instance_extension_names == nullptr) {
+            return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+        }
+
+        const std::vector<const char*> required_instance_extensions {
+            required_instance_extension_names,
+            std::ranges::next(required_instance_extension_names, required_instance_extension_count)
+        };
+
+        const vk::InstanceCreateInfo instance_create_info {
+            .pApplicationInfo = &APPLICATION_INFO,
+            .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
+            .ppEnabledExtensionNames = required_instance_extensions.data(),
+        };
+
+        return m_context
+            .createInstance(instance_create_info)
+            .transform(store_into(m_instance))
+            .transform_error(ApplicationError::to_error());
+    }
+
+    GLFWwindow* m_window { nullptr };
+    vk::raii::Context m_context;
+    vk::raii::Instance m_instance { nullptr };
+    bool m_has_value { false };
+    [[maybe_unused]] std::array<std::byte, 7> m_padding { };
+};
+
 auto main() -> std::int32_t
 {
+    Application application { };
     return EXIT_SUCCESS;
 }
