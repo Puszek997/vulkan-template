@@ -245,7 +245,7 @@ private:
             .apiVersion = vk::ApiVersion14
         };
 
-        std::uint32_t required_instance_extension_count { };
+        std::uint32_t required_instance_extension_count { 0 };
         const char* const* const required_instance_extension_names { glfwGetRequiredInstanceExtensions(&required_instance_extension_count) };
         if (required_instance_extension_names == nullptr) {
             return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
@@ -291,7 +291,7 @@ private:
 
     [[nodiscard]] auto create_surface() noexcept -> std::expected<void, ApplicationError>
     {
-        VkSurfaceKHR surface { };
+        VkSurfaceKHR surface { nullptr };
         if (vk::Result result { glfwCreateWindowSurface(*m_instance, m_window, nullptr, &surface) };
             result != vk::Result::eSuccess) {
             return std::expected<void, ApplicationError> { std::unexpect, result };
