@@ -271,6 +271,9 @@ private:
 auto main() -> std::int32_t
 {
     Application application { };
-    application.run();
+    if (application.valid()) {
+        application.run();
+    }
+
     return EXIT_SUCCESS;
 }

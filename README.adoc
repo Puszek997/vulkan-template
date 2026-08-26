@@ -7,7 +7,6 @@
 * [ ] clang: flags, gcc: flags, warnings, msvc: flags, defs, warnings
 * [ ] kodzik do cpp module (.cppm)
 * [ ] moltenVK support
-* [ ] do kazdej liczby dodac U, ... (np. 12U, 9Z)
 * [ ] slangc flags
 * [ ] change na :: w cmake?
 * [ ] change names of submodules?
