@@ -158,9 +158,9 @@ public:
 
     explicit Application() noexcept
     {
-        m_has_value = create_window()
-                          .and_then(std::bind_front(&Application::create_instance, this))
-                          .has_value();
+        m_valid = create_window()
+                      .and_then(std::bind_front(&Application::create_instance, this))
+                      .has_value();
     }
 
     Application(const Application&) = delete;
@@ -179,6 +179,16 @@ public:
         while (glfwWindowShouldClose(m_window) == GLFW_FALSE) {
             glfwPollEvents();
         }
+    }
+
+    [[nodiscard]] auto valid() const noexcept -> bool
+    {
+        return m_valid;
+    }
+
+    [[nodiscard]] explicit operator bool() const noexcept
+    {
+        return m_valid;
     }
 
 private:
@@ -254,7 +264,7 @@ private:
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
-    bool m_has_value { false };
+    bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 7> m_padding { };
 };
 
