@@ -171,6 +171,14 @@ public:
         glfwTerminate();
     }
 
+    // TODO: puszek_997 - loop func?
+    auto run() noexcept -> void
+    {
+        while (glfwWindowShouldClose(m_window) == GLFW_FALSE) {
+            glfwPollEvents();
+        }
+    }
+
 private:
     [[nodiscard]] auto create_window() noexcept -> std::expected<void, ApplicationError>
     {
@@ -178,8 +186,27 @@ private:
             return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
         }
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
+        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
+        glfwWindowHint(GLFW_RED_BITS, 8);
+        glfwWindowHint(GLFW_GREEN_BITS, 8);
+        glfwWindowHint(GLFW_BLUE_BITS, 8);
+        glfwWindowHint(GLFW_ALPHA_BITS, 8);
+        glfwWindowHint(GLFW_DEPTH_BITS, 24);
+        glfwWindowHint(GLFW_STENCIL_BITS, 8);
+        glfwWindowHint(GLFW_AUX_BUFFERS, 0);
+        glfwWindowHint(GLFW_SAMPLES, 0);
+        glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+        glfwWindowHint(GLFW_STEREO, GLFW_FALSE);
+        glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_WIN32_KEYBOARD_MENU, GLFW_FALSE);
+        glfwWindowHintString(GLFW_COCOA_FRAME_NAME, "");
+        glfwWindowHintString(GLFW_WAYLAND_APP_ID, "");
+        glfwWindowHintString(GLFW_X11_CLASS_NAME, "");
+        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "");
 
         m_window = glfwCreateWindow(800, 600, "Hello Triangle", nullptr, nullptr);
         if (m_window == nullptr) {
@@ -232,5 +259,6 @@ private:
 auto main() -> std::int32_t
 {
     Application application { };
+    application.run();
     return EXIT_SUCCESS;
 }
