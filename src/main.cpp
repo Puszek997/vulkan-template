@@ -166,6 +166,7 @@ public:
     {
         m_valid = create_window()
                       .and_then(std::bind_front(&Application::create_instance, this))
+                      .and_then(std::bind_front(&Application::create_surface, this))
                       .has_value();
     }
 
@@ -288,9 +289,23 @@ private:
         }
     }
 
+    [[nodiscard]] auto create_surface() noexcept -> std::expected<void, ApplicationError>
+    {
+        VkSurfaceKHR surface { };
+        if (vk::Result result { glfwCreateWindowSurface(*m_instance, m_window, nullptr, &surface) };
+            result != vk::Result::eSuccess) {
+            return std::expected<void, ApplicationError> { std::unexpect, result };
+        }
+
+        m_surface = vk::raii::SurfaceKHR(m_instance, surface);
+
+        return std::expected<void, ApplicationError> { std::in_place };
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
+    vk::raii::SurfaceKHR m_surface { nullptr };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 7> m_padding { };
 };
