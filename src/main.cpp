@@ -6,12 +6,13 @@
 import vulkan;
 
 template <typename... Ts>
+    requires(std::same_as<std::remove_cvref_t<Ts>, Ts> && ...)
 class [[nodiscard]] Error {
 public:
     using reason_type = std::variant<std::monostate, Ts...>;
 
     template <typename T>
-        requires std::constructible_from<reason_type, std::in_place_type_t<std::remove_cvref_t<T>>, T>
+        requires(std::same_as<std::remove_cvref_t<T>, Ts> || ...)
     explicit constexpr Error(T&& value) noexcept(
         std::is_nothrow_constructible_v<reason_type, std::in_place_type_t<std::remove_cvref_t<T>>, T>
     )
