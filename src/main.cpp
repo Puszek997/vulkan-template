@@ -168,6 +168,7 @@ public:
         m_valid = create_window()
                       .and_then(std::bind_front(&Application::create_instance, this))
                       .and_then(std::bind_front(&Application::create_surface, this))
+                      .and_then(std::bind_front(&Application::pick_physical_device, this))
                       .has_value();
     }
 
@@ -303,12 +304,56 @@ private:
         return std::expected<void, ApplicationError> { std::in_place };
     }
 
+     // TODO: puszek_997 - lambda w and_then ktora zwroci vector vectorow vk::Bool32 surface_support?
+    [[nodiscard]] auto pick_physical_device() noexcept -> std::expected<void, ApplicationError>
+    {
+        return m_instance
+            .enumeratePhysicalDevices()
+            .transform_error(ApplicationError::to_error())
+            .and_then([this] [[nodiscard]] (const std::vector<vk::raii::PhysicalDevice>& physical_devices) noexcept -> std::expected<void, ApplicationError> {
+                for (const vk::raii::PhysicalDevice& physical_device : physical_devices) {
+                    if (physical_device.getProperties2().properties.apiVersion < vk::ApiVersion14) {
+                        continue;
+                    }
+
+                    for (auto&& [index, queue_family_properties2] : physical_device.getQueueFamilyProperties2() | std::views::enumerate) {
+                        vk::Bool32 surface_support { vk::False };
+
+                        // TODO: puszek_997 - maybe change this if to macro so it will feel like rust early return "?"
+                        if (
+                            std::expected<void, ApplicationError> result {
+                                physical_device
+                                    .getSurfaceSupportKHR(static_cast<std::uint32_t>(index), *m_surface)
+                                    .transform(store_into(surface_support))
+                                    .transform_error(ApplicationError::to_error()) };
+                            !result.has_value()
+                        ) {
+                            return result;
+                        }
+
+                        if (
+                            static_cast<bool>(queue_family_properties2.queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics)
+                            && static_cast<bool>(surface_support)
+                        ) {
+                            m_physical_device = physical_device;
+                            m_queue_family_index = static_cast<std::uint32_t>(index);
+                            return std::expected<void, ApplicationError> { std::in_place };
+                        }
+                    }
+                }
+
+                return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+            });
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
     vk::raii::SurfaceKHR m_surface { nullptr };
+    vk::raii::PhysicalDevice m_physical_device { nullptr };
+    std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
-    [[maybe_unused]] std::array<std::byte, 7> m_padding { };
+    [[maybe_unused]] std::array<std::byte, 3> m_padding { };
 };
 
 auto main() -> std::int32_t
