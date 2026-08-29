@@ -66,7 +66,6 @@ struct std::formatter<std::monostate, CharT> {
     }
 
     // TODO: puszek_997 - add constexpr after P3391R2 is implemented
-    // TODO: puszek_997 - use macro for widen?
     template <typename Out>
     [[nodiscard]] static auto format(
         [[maybe_unused]] const std::monostate& monostate,
@@ -90,7 +89,6 @@ template <typename T, typename CharT>
     requires VkToStringable<T> && CharType<CharT>
 struct std::formatter<T, CharT> : public std::formatter<const CharT*, CharT> { // NOLINT(cert-dcl58-cpp, bugprone-std-namespace-modification)
     // TODO: puszek_997 - add constexpr after P3391R2 is implemented
-    // TODO: puszek_997 - use macro for widen?
     template <typename Out>
     [[nodiscard]] auto format(
         const T& value,
@@ -115,7 +113,6 @@ struct std::formatter<std::variant<Ts...>, CharT> { // NOLINT(cert-dcl58-cpp, bu
     }
 
     // TODO: puszek_997 - add constexpr after P3391R2 is implemented
-    // TODO: puszek_997 - use macro for widen?
     template <typename Out>
     [[nodiscard]] static auto format(
         const std::variant<Ts...>& variant,
