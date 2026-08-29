@@ -168,6 +168,7 @@ public:
                       .and_then(std::bind_front(&Application::pick_physical_device, this))
                       .and_then(std::bind_front(&Application::create_logical_device, this))
                       .and_then(std::bind_front(&Application::create_swap_chain, this))
+                      .and_then(std::bind_front(&Application::create_image_views, this))
                       .has_value();
     }
 
@@ -514,6 +515,49 @@ private:
             .transform_error(ApplicationError::to_error());
     }
 
+    [[nodiscard]] auto create_image_views() noexcept -> std::expected<void, ApplicationError>
+    {
+        // TODO: puszek_997 - assert(swapChainImageViews.empty()); from vk tutorial
+        vk::ImageViewCreateInfo image_view_create_info {
+            .viewType = vk::ImageViewType::e2D,
+            .format = m_swap_chain_surface_format2_khr.surfaceFormat.format,
+            .components = {
+                .r = vk::ComponentSwizzle::eIdentity,
+                .g = vk::ComponentSwizzle::eIdentity,
+                .b = vk::ComponentSwizzle::eIdentity,
+                .a = vk::ComponentSwizzle::eIdentity,
+            },
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+        };
+
+        m_swap_chain_image_views.reserve(m_swap_chain_images.size());
+
+        for (const vk::Image& image : m_swap_chain_images) {
+            image_view_create_info.image = image;
+            // TODO: puszek_997 - maybe change this if to macro so it will feel like rust early return "?"
+            if (
+                std::expected<void, ApplicationError> result {
+                    m_device
+                        .createImageView(image_view_create_info)
+                        .transform([this](vk::raii::ImageView&& image_view) noexcept -> void {
+                            m_swap_chain_image_views.emplace_back(std::move(image_view));
+                        })
+                        .transform_error(ApplicationError::to_error()) };
+                !result.has_value()
+            ) {
+                return result;
+            }
+        }
+
+        return std::expected<void, ApplicationError> { std::in_place };
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
@@ -525,6 +569,7 @@ private:
     vk::Extent2D m_swap_chain_extent { };
     vk::raii::SwapchainKHR m_swap_chain { nullptr };
     std::vector<vk::Image> m_swap_chain_images;
+    std::vector<vk::raii::ImageView> m_swap_chain_image_views;
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
