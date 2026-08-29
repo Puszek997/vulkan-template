@@ -169,6 +169,7 @@ public:
                       .and_then(std::bind_front(&Application::create_instance, this))
                       .and_then(std::bind_front(&Application::create_surface, this))
                       .and_then(std::bind_front(&Application::pick_physical_device, this))
+                      .and_then(std::bind_front(&Application::create_logical_device, this))
                       .has_value();
     }
 
@@ -304,7 +305,8 @@ private:
         return std::expected<void, ApplicationError> { std::in_place };
     }
 
-     // TODO: puszek_997 - lambda w and_then ktora zwroci vector vectorow vk::Bool32 surface_support?
+    // TODO: puszek_997 - lambda w and_then ktora zwroci vector vectorow vk::Bool32 surface_support?
+    // TODO: puszek_997 - i tak device moze byc zle :(, check device features, extensions
     [[nodiscard]] auto pick_physical_device() noexcept -> std::expected<void, ApplicationError>
     {
         return m_instance
@@ -346,11 +348,61 @@ private:
             });
     }
 
+    [[nodiscard]] auto create_logical_device() noexcept -> std::expected<void, ApplicationError>
+    {
+        static constexpr float QUEUE_PRIORITY { 0.5F };
+        const std::array<vk::DeviceQueueCreateInfo, 1> device_queue_create_infos { {
+            {
+                .queueFamilyIndex = m_queue_family_index,
+                .queueCount = 1,
+                .pQueuePriorities = &QUEUE_PRIORITY,
+            },
+        } };
+
+        const vk::StructureChain<
+            vk::PhysicalDeviceFeatures2,
+            vk::PhysicalDeviceVulkan11Features,
+            vk::PhysicalDeviceVulkan13Features,
+            vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+        >
+            feature_chain {
+                { },
+                { .shaderDrawParameters = vk::True },
+                {
+                    .synchronization2 = vk::True,
+                    .dynamicRendering = vk::True,
+                },
+                { .extendedDynamicState = vk::True }
+            };
+
+        static constexpr std::array<const char*, 1> REQUIRED_DEVICE_EXTENSIONS {
+            vk::KHRSwapchainExtensionName
+        };
+
+        const vk::DeviceCreateInfo device_create_info {
+            .pNext = &feature_chain.get<vk::PhysicalDeviceFeatures2>(),
+            .queueCreateInfoCount = static_cast<std::uint32_t>(device_queue_create_infos.size()),
+            .pQueueCreateInfos = device_queue_create_infos.data(),
+            .enabledExtensionCount = static_cast<std::uint32_t>(REQUIRED_DEVICE_EXTENSIONS.size()),
+            .ppEnabledExtensionNames = REQUIRED_DEVICE_EXTENSIONS.data(),
+        };
+
+        return m_physical_device
+            .createDevice(device_create_info)
+            .transform(store_into(m_device))
+            .transform([this] noexcept -> void {
+                m_queue = m_device.getQueue(m_queue_family_index, 0);
+            })
+            .transform_error(ApplicationError::to_error());
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
     vk::raii::SurfaceKHR m_surface { nullptr };
     vk::raii::PhysicalDevice m_physical_device { nullptr };
+    vk::raii::Device m_device { nullptr };
+    vk::raii::Queue m_queue { nullptr };
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
