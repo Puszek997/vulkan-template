@@ -404,7 +404,7 @@ private:
         return m_physical_device
             .getSurfaceFormats2KHR(physical_device_surface_info2_khr)
             .transform([this](const std::vector<vk::SurfaceFormat2KHR>& surface_formats) constexpr noexcept -> void {
-                const std::ranges::borrowed_iterator_t<const std::vector<vk::SurfaceFormat2KHR>&> format_it {
+                const std::ranges::borrowed_iterator_t<const std::vector<vk::SurfaceFormat2KHR>&> surface_format_it {
                     std::ranges::find_if(
                         surface_formats,
                         [] [[nodiscard]] (const vk::SurfaceFormat2KHR& surface_format) static constexpr noexcept -> bool {
@@ -414,7 +414,7 @@ private:
                     )
                 };
 
-                m_swap_chain_surface_format = format_it != surface_formats.end() ? *format_it : surface_formats.at(0);
+                m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
             })
             .and_then([&physical_device_surface_info2_khr, this] [[nodiscard]] noexcept -> std::expected<vk::SurfaceCapabilities2KHR, vk::Result> {
                 return m_physical_device
@@ -488,8 +488,8 @@ private:
                     const vk::SwapchainCreateInfoKHR swap_chain_create_info {
                         .surface = *m_surface,
                         .minImageCount = std::get<std::uint32_t>(swap_chain_properties),
-                        .imageFormat = m_swap_chain_surface_format.surfaceFormat.format,
-                        .imageColorSpace = m_swap_chain_surface_format.surfaceFormat.colorSpace,
+                        .imageFormat = m_swap_chain_surface_format2_khr.surfaceFormat.format,
+                        .imageColorSpace = m_swap_chain_surface_format2_khr.surfaceFormat.colorSpace,
                         .imageExtent = m_swap_chain_extent,
                         .imageArrayLayers = 1,
                         .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
@@ -521,7 +521,7 @@ private:
     vk::raii::PhysicalDevice m_physical_device { nullptr };
     vk::raii::Device m_device { nullptr };
     vk::raii::Queue m_queue { nullptr };
-    vk::SurfaceFormat2KHR m_swap_chain_surface_format { };
+    vk::SurfaceFormat2KHR m_swap_chain_surface_format2_khr { };
     vk::Extent2D m_swap_chain_extent { };
     vk::raii::SwapchainKHR m_swap_chain { nullptr };
     std::vector<vk::Image> m_swap_chain_images;
