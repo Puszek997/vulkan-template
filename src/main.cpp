@@ -406,7 +406,7 @@ private:
 
         return m_physical_device
             .getSurfaceFormats2KHR(physical_device_surface_info2_khr)
-            .transform([this](const std::vector<vk::SurfaceFormat2KHR>& surface_formats) noexcept -> void {
+            .transform([this](const std::vector<vk::SurfaceFormat2KHR>& surface_formats) constexpr noexcept -> void {
                 const std::ranges::borrowed_iterator_t<const std::vector<vk::SurfaceFormat2KHR>&> format_it {
                     std::ranges::find_if(
                         surface_formats,
