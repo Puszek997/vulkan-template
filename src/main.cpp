@@ -469,12 +469,12 @@ private:
                         .getSurfacePresentModesKHR(*m_surface)
                         .transform(
                             [captured_swap_chain_properties = std::move(swap_chain_properties)] [[nodiscard]] (
-                                std::vector<vk::PresentModeKHR>&& present_modes
+                                const std::vector<vk::PresentModeKHR>& present_modes
                             ) mutable noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR> {
                                 return std::tuple_cat(
                                     std::move(captured_swap_chain_properties),
                                     std::tuple<vk::PresentModeKHR> {
-                                        std::ranges::contains(std::move(present_modes), vk::PresentModeKHR::eMailbox)
+                                        std::ranges::contains(present_modes, vk::PresentModeKHR::eMailbox)
                                             ? vk::PresentModeKHR::eMailbox
                                             : vk::PresentModeKHR::eFifo }
                                 );
