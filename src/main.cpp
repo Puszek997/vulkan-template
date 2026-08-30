@@ -484,7 +484,7 @@ private:
             )
             .and_then(
                 [this] [[nodiscard]] (
-                    std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR> swap_chain_properties
+                    const std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR>& swap_chain_properties
                 ) noexcept -> std::expected<void, vk::Result> {
                     const vk::SwapchainCreateInfoKHR swap_chain_create_info {
                         .surface = *m_surface,
