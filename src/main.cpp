@@ -559,17 +559,34 @@ private:
     }
 
     // TODO: puszek_997 - to own function?
-    // TODO: puszek_997 - char na std::byte?
-    [[nodiscard]] static auto read_file(const std::filesystem::path& path) noexcept -> std::expected<std::vector<char>, ApplicationError>
+    template <typename T>
+        requires std::integral<T>
+    [[nodiscard]] static auto read_file(const std::filesystem::path& path) noexcept -> std::expected<std::vector<T>, ApplicationError>
     {
-        std::ifstream file(path, std::ios::binary | std::ios::ate);
-        if (!file.is_open()) {
-            return std::expected<std::vector<char>, ApplicationError> { std::unexpect, Result::eError };
+        const std::unique_ptr<std::FILE, decltype(&std::fclose)> file { std::fopen(path.string().data(), "rb"), std::fclose };
+        if (file == nullptr) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
         }
-        std::vector<char> buffer(static_cast<std::size_t>(file.tellg()));
-        file.seekg(0);
-        file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-        return buffer;
+        if (std::fseek(file.get(), 0, SEEK_END) != 0) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+        }
+
+        const auto size_in_bytes { std::ftell(file.get()) };
+        if (size_in_bytes == -1) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+        }
+        if (std::fseek(file.get(), 0, SEEK_SET) != 0) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+        }
+
+        std::vector<T> buffer(static_cast<std::vector<T>::size_type>(static_cast<std::size_t>(size_in_bytes) / sizeof(T)));
+        if (
+            const std::size_t number_of_objects_read { std::fread(buffer.data(), sizeof(T), static_cast<std::size_t>(buffer.size()), file.get()) };
+            number_of_objects_read != static_cast<std::size_t>(buffer.size())
+        ) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+        }
+        return std::expected<std::vector<T>, ApplicationError> { std::in_place, std::move(buffer) };
     }
 
     GLFWwindow* m_window { nullptr };
