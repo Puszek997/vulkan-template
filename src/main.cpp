@@ -560,9 +560,9 @@ private:
 
     // TODO: puszek_997 - to own function?
     // TODO: puszek_997 - char na std::byte?
-    [[nodiscard]] static auto read_file(const std::string& filename) noexcept -> std::expected<std::vector<char>, ApplicationError>
+    [[nodiscard]] static auto read_file(const std::filesystem::path& path) noexcept -> std::expected<std::vector<char>, ApplicationError>
     {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file.is_open()) {
             return std::expected<std::vector<char>, ApplicationError> { std::unexpect, Result::eError };
         }
