@@ -567,7 +567,7 @@ private:
             return std::expected<std::vector<char>, ApplicationError> { std::unexpect, Result::eError };
         }
         std::vector<char> buffer(static_cast<std::size_t>(file.tellg()));
-        file.seekg(0, std::ios::beg);
+        file.seekg(0);
         file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
         return buffer;
     }
