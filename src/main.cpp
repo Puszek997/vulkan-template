@@ -558,6 +558,20 @@ private:
         return std::expected<void, ApplicationError> { std::in_place };
     }
 
+    // TODO: puszek_997 - to own function?
+    // TODO: puszek_997 - char na std::byte?
+    [[nodiscard]] static auto read_file(const std::string& filename) noexcept -> std::expected<std::vector<char>, ApplicationError>
+    {
+        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+        if (!file.is_open()) {
+            return std::expected<std::vector<char>, ApplicationError> { std::unexpect, Result::eError };
+        }
+        std::vector<char> buffer(static_cast<std::size_t>(file.tellg()));
+        file.seekg(0, std::ios::beg);
+        file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+        return buffer;
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
