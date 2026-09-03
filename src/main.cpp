@@ -169,6 +169,7 @@ public:
                       .and_then(std::bind_front(&Application::create_logical_device, this))
                       .and_then(std::bind_front(&Application::create_swap_chain, this))
                       .and_then(std::bind_front(&Application::create_image_views, this))
+                      .and_then(std::bind_front(&Application::create_graphics_pipeline, this))
                       .has_value();
     }
 
@@ -587,6 +588,134 @@ private:
         return std::expected<std::vector<T>, ApplicationError> { std::in_place, std::move(buffer) };
     }
 
+    [[nodiscard]] auto create_graphics_pipeline() noexcept -> std::expected<void, ApplicationError>
+    {
+        static constexpr vk::PipelineLayoutCreateInfo PIPELINE_LAYOUT_INFO {
+            .setLayoutCount = 0,
+            .pSetLayouts = nullptr,
+            .pushConstantRangeCount = 0,
+            .pPushConstantRanges = nullptr,
+        };
+
+        return m_device
+            .createPipelineLayout(PIPELINE_LAYOUT_INFO)
+            .transform(store_into(m_pipeline_layout))
+            .transform_error(ApplicationError::to_error())
+            .and_then([] [[nodiscard]] static noexcept -> std::expected<std::vector<std::uint32_t>, ApplicationError> {
+                return read_file<std::uint32_t>(std::filesystem::path { "build/third-party/slang-module/shaders/shader.spv" });
+            })
+            .and_then([this] [[nodiscard]] (const std::vector<std::uint32_t>& shader_source) noexcept -> std::expected<vk::raii::ShaderModule, ApplicationError> {
+                const vk::ShaderModuleCreateInfo shader_module_create_info {
+                    .codeSize = static_cast<std::size_t>(shader_source.size()) * sizeof(std::uint32_t),
+                    .pCode = shader_source.data(),
+                };
+
+                return m_device
+                    .createShaderModule(shader_module_create_info)
+                    .transform_error(ApplicationError::to_error());
+            })
+            .and_then([this] [[nodiscard]] (const vk::raii::ShaderModule& shader_module) noexcept -> std::expected<vk::raii::Pipeline, ApplicationError> {
+                // TODO: puszek_997 - ShaderModuleCreateInfo extends PipelineShaderStageCreateInfo hmmm
+                const std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_create_info { {
+                    {
+                        .stage = vk::ShaderStageFlagBits::eVertex,
+                        .module = shader_module,
+                        .pName = "vert_main",
+                        .pSpecializationInfo = nullptr,
+                    },
+                    {
+                        .stage = vk::ShaderStageFlagBits::eFragment,
+                        .module = shader_module,
+                        .pName = "frag_main",
+                        .pSpecializationInfo = nullptr,
+                    },
+                } };
+
+                static constexpr vk::PipelineVertexInputStateCreateInfo PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO { };
+
+                static constexpr vk::PipelineInputAssemblyStateCreateInfo PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO {
+                    .topology = vk::PrimitiveTopology::eTriangleList,
+                    .primitiveRestartEnable = vk::False
+                };
+
+                static constexpr vk::PipelineViewportStateCreateInfo PIPELINE_VIEWPORT_STATE_CREATE_INFO {
+                    .viewportCount = 1,
+                    .scissorCount = 1,
+                };
+
+                static constexpr vk::PipelineRasterizationStateCreateInfo PIPELINE_RASTERIZATION_STATE_CREATE_INFO {
+                    .depthClampEnable = vk::False,
+                    .rasterizerDiscardEnable = vk::False,
+                    .polygonMode = vk::PolygonMode::eFill,
+                    .cullMode = vk::CullModeFlagBits::eBack,
+                    .frontFace = vk::FrontFace::eCounterClockwise,
+                    .depthBiasEnable = vk::False,
+                    .depthBiasConstantFactor = 0.0F,
+                    .depthBiasClamp = 0.0F,
+                    .depthBiasSlopeFactor = 0.0F,
+                    .lineWidth = 1.0F,
+                };
+
+                static constexpr vk::PipelineMultisampleStateCreateInfo PIPELINE_MULTISAMPLE_STATE_CREATE_INFO {
+                    .rasterizationSamples = vk::SampleCountFlagBits::e1,
+                    .sampleShadingEnable = vk::False,
+                    .minSampleShading = 1.0F,
+                    .pSampleMask = nullptr,
+                    .alphaToCoverageEnable = vk::False,
+                    .alphaToOneEnable = vk::False,
+                };
+
+                static constexpr vk::PipelineColorBlendAttachmentState PIPELINE_COLOR_BLEND_ATTACHMENT_STATE {
+                    .blendEnable = vk::False,
+                    .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+                };
+
+                static constexpr vk::PipelineColorBlendStateCreateInfo PIPELINE_COLOR_BLEND_STATE_CREATE_INFO {
+                    .attachmentCount = 1,
+                    .pAttachments = &PIPELINE_COLOR_BLEND_ATTACHMENT_STATE,
+                };
+
+                static constexpr std::array<vk::DynamicState, 2> DYNAMIC_STATES {
+                    vk::DynamicState::eViewport,
+                    vk::DynamicState::eScissor,
+                };
+
+                static constexpr vk::PipelineDynamicStateCreateInfo PIPELINE_DYNAMIC_STATE_CREATE_INFO {
+                    .dynamicStateCount = static_cast<std::uint32_t>(DYNAMIC_STATES.size()),
+                    .pDynamicStates = DYNAMIC_STATES.data(),
+                };
+
+                const vk::StructureChain<
+                    vk::GraphicsPipelineCreateInfo,
+                    vk::PipelineRenderingCreateInfo
+                >
+                    pipeline_create_info_chain {
+                        {
+                            .stageCount = pipeline_shader_stage_create_info.size(),
+                            .pStages = pipeline_shader_stage_create_info.data(),
+                            .pVertexInputState = &PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+                            .pInputAssemblyState = &PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                            .pViewportState = &PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+                            .pRasterizationState = &PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+                            .pMultisampleState = &PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+                            .pColorBlendState = &PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+                            .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+                            .layout = m_pipeline_layout,
+                            .renderPass = nullptr,
+                        },
+                        {
+                            .colorAttachmentCount = 1,
+                            .pColorAttachmentFormats = &m_swap_chain_surface_format2_khr.surfaceFormat.format,
+                        }
+                    };
+
+                return m_device
+                    .createGraphicsPipeline(nullptr, pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>())
+                    .transform_error(ApplicationError::to_error());
+            })
+            .transform(store_into(m_graphics_pipeline));
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
@@ -599,6 +728,8 @@ private:
     vk::raii::SwapchainKHR m_swap_chain { nullptr };
     std::vector<vk::Image> m_swap_chain_images;
     std::vector<vk::raii::ImageView> m_swap_chain_image_views;
+    vk::raii::PipelineLayout m_pipeline_layout { nullptr };
+    vk::raii::Pipeline m_graphics_pipeline { nullptr };
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
