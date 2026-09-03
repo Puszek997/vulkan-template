@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <cstdio>
 #include <cstdlib>
 
 import vulkan;
@@ -713,12 +714,16 @@ private:
                             .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
                             .layout = m_pipeline_layout,
                             .renderPass = nullptr,
+                            .subpass = 0,
                             .basePipelineHandle = nullptr,
                             .basePipelineIndex = -1,
                         },
                         {
+                            .viewMask = 0,
                             .colorAttachmentCount = 1,
                             .pColorAttachmentFormats = &m_swap_chain_surface_format2_khr.surfaceFormat.format,
+                            .depthAttachmentFormat = vk::Format::eUndefined,
+                            .stencilAttachmentFormat = vk::Format::eUndefined,
                         }
                     };
 
