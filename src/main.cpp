@@ -677,8 +677,11 @@ private:
                 };
 
                 static constexpr vk::PipelineColorBlendStateCreateInfo PIPELINE_COLOR_BLEND_STATE_CREATE_INFO {
+                    .logicOpEnable = vk::False,
+                    .logicOp = vk::LogicOp::eCopy,
                     .attachmentCount = 1,
                     .pAttachments = &PIPELINE_COLOR_BLEND_ATTACHMENT_STATE,
+                    .blendConstants = { { 0.0F, 0.0F, 0.0F, 0.0F } }
                 };
 
                 static constexpr std::array<vk::DynamicState, 2> DYNAMIC_STATES {
@@ -708,6 +711,8 @@ private:
                             .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
                             .layout = m_pipeline_layout,
                             .renderPass = nullptr,
+                            .basePipelineHandle = nullptr,
+                            .basePipelineIndex = -1,
                         },
                         {
                             .colorAttachmentCount = 1,
