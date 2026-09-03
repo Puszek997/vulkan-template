@@ -362,8 +362,7 @@ private:
         const vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
             vk::PhysicalDeviceVulkan11Features,
-            vk::PhysicalDeviceVulkan13Features,
-            vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+            vk::PhysicalDeviceVulkan13Features
         >
             feature_chain {
                 { },
@@ -372,7 +371,6 @@ private:
                     .synchronization2 = vk::True,
                     .dynamicRendering = vk::True,
                 },
-                { .extendedDynamicState = vk::True }
             };
 
         static constexpr std::array<const char*, 1> REQUIRED_DEVICE_EXTENSIONS {
