@@ -172,6 +172,7 @@ public:
                       .and_then(std::bind_front(&Application::create_swap_chain, this))
                       .and_then(std::bind_front(&Application::create_image_views, this))
                       .and_then(std::bind_front(&Application::create_graphics_pipeline, this))
+                      .and_then(std::bind_front(&Application::create_command_pool, this))
                       .has_value();
     }
 
@@ -735,6 +736,19 @@ private:
             .transform(store_into(m_graphics_pipeline));
     }
 
+    [[nodiscard]] auto create_command_pool() noexcept -> std::expected<void, ApplicationError>
+    {
+        const vk::CommandPoolCreateInfo command_pool_create_info {
+            .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+            .queueFamilyIndex = m_queue_family_index,
+        };
+
+        return m_device
+            .createCommandPool(command_pool_create_info)
+            .transform(store_into(m_command_pool))
+            .transform_error(ApplicationError::to_error());
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
@@ -749,6 +763,7 @@ private:
     std::vector<vk::raii::ImageView> m_swap_chain_image_views;
     vk::raii::PipelineLayout m_pipeline_layout { nullptr };
     vk::raii::Pipeline m_graphics_pipeline { nullptr };
+    vk::raii::CommandPool m_command_pool { nullptr };
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
