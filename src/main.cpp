@@ -35,6 +35,7 @@ public:
     template <typename Self>
     [[nodiscard]] constexpr auto reason(this Self&& self) noexcept -> decltype(auto)
     {
+        // TODO: puszek_997 - std::forward_like?
         return (std::forward<Self>(self).m_reason);
     }
 
