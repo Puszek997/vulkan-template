@@ -216,6 +216,13 @@ public:
 private:
     [[nodiscard]] auto create_window() noexcept -> std::expected<void, ApplicationError>
     {
+        glfwInitHint(GLFW_PLATFORM, GLFW_ANY_PLATFORM);
+        glfwInitHint(GLFW_JOYSTICK_HAT_BUTTONS, GLFW_TRUE);
+        glfwInitHint(GLFW_ANGLE_PLATFORM_TYPE, GLFW_ANGLE_PLATFORM_TYPE_NONE);
+        glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_TRUE);
+        glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_TRUE);
+        glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_PREFER_LIBDECOR);
+        glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, GLFW_TRUE);
         if (glfwInit() == GLFW_FALSE) {
             return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwInit };
         }
