@@ -435,48 +435,50 @@ private:
 
                 m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
             })
-            .and_then([&physical_device_surface_info2_khr, this] [[nodiscard]] noexcept -> std::expected<vk::SurfaceCapabilities2KHR, vk::Result> {
-                return m_physical_device
-                    .getSurfaceCapabilities2KHR(physical_device_surface_info2_khr)
-                    .transform([this] [[nodiscard]] (const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr) noexcept -> vk::SurfaceCapabilities2KHR {
-                        if (surface_capabilities2_khr.surfaceCapabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
-                            m_swap_chain_extent = surface_capabilities2_khr.surfaceCapabilities.currentExtent;
+            .and_then(
+                [&physical_device_surface_info2_khr, this] [[nodiscard]] noexcept -> std::expected<std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR>, vk::Result> {
+                    return m_physical_device
+                        .getSurfaceCapabilities2KHR(physical_device_surface_info2_khr)
+                        .transform([this] [[nodiscard]] (const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr) noexcept -> vk::SurfaceCapabilities2KHR {
+                            if (surface_capabilities2_khr.surfaceCapabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
+                                m_swap_chain_extent = surface_capabilities2_khr.surfaceCapabilities.currentExtent;
+                                return surface_capabilities2_khr;
+                            }
+
+                            std::int32_t width { 0 };
+                            std::int32_t height { 0 };
+                            glfwGetFramebufferSize(m_window, &width, &height);
+
+                            m_swap_chain_extent = {
+                                .width = std::ranges::clamp(
+                                    static_cast<std::uint32_t>(width),
+                                    surface_capabilities2_khr.surfaceCapabilities.minImageExtent.width,
+                                    surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.width
+                                ),
+                                .height = std::ranges::clamp(
+                                    static_cast<std::uint32_t>(height),
+                                    surface_capabilities2_khr.surfaceCapabilities.minImageExtent.height,
+                                    surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.height
+                                )
+                            };
+
                             return surface_capabilities2_khr;
-                        }
+                        })
+                        .transform(
+                            [] [[nodiscard]] (
+                                const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr
+                            ) static constexpr noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> {
+                                std::uint32_t min_image_count { std::max<std::uint32_t>(3, surface_capabilities2_khr.surfaceCapabilities.minImageCount) };
+                                if (
+                                    (0 != surface_capabilities2_khr.surfaceCapabilities.maxImageCount)
+                                    && (surface_capabilities2_khr.surfaceCapabilities.maxImageCount < min_image_count)
+                                ) {
+                                    min_image_count = surface_capabilities2_khr.surfaceCapabilities.maxImageCount;
+                                }
 
-                        std::int32_t width { 0 };
-                        std::int32_t height { 0 };
-                        glfwGetFramebufferSize(m_window, &width, &height);
-
-                        m_swap_chain_extent = {
-                            .width = std::ranges::clamp(
-                                static_cast<std::uint32_t>(width),
-                                surface_capabilities2_khr.surfaceCapabilities.minImageExtent.width,
-                                surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.width
-                            ),
-                            .height = std::ranges::clamp(
-                                static_cast<std::uint32_t>(height),
-                                surface_capabilities2_khr.surfaceCapabilities.minImageExtent.height,
-                                surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.height
-                            )
-                        };
-
-                        return surface_capabilities2_khr;
-                    });
-            })
-            .transform(
-                [] [[nodiscard]] (
-                    const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr
-                ) static constexpr noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> {
-                    std::uint32_t min_image_count { std::max<std::uint32_t>(3, surface_capabilities2_khr.surfaceCapabilities.minImageCount) };
-                    if (
-                        (0 != surface_capabilities2_khr.surfaceCapabilities.maxImageCount)
-                        && (surface_capabilities2_khr.surfaceCapabilities.maxImageCount < min_image_count)
-                    ) {
-                        min_image_count = surface_capabilities2_khr.surfaceCapabilities.maxImageCount;
-                    }
-
-                    return std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> { min_image_count, surface_capabilities2_khr };
+                                return std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> { min_image_count, surface_capabilities2_khr };
+                            }
+                        );
                 }
             )
             .and_then(
@@ -522,14 +524,14 @@ private:
 
                     return m_device
                         .createSwapchainKHR(swap_chain_create_info)
-                        .and_then([this] [[nodiscard]] (vk::raii::SwapchainKHR&& swap_chain) noexcept -> std::expected<void, vk::Result> {
-                            m_swap_chain = std::move(swap_chain);
-                            return m_swap_chain
-                                .getImages()
-                                .transform(store_into(m_swap_chain_images));
-                        });
+                        .transform(store_into(m_swap_chain));
                 }
             )
+            .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
+                return m_swap_chain
+                    .getImages()
+                    .transform(store_into(m_swap_chain_images));
+            })
             .transform_error(ApplicationError::to_error());
     }
 
@@ -633,7 +635,7 @@ private:
                     .createShaderModule(shader_module_create_info)
                     .transform_error(ApplicationError::to_error());
             })
-            .and_then([this] [[nodiscard]] (const vk::raii::ShaderModule& shader_module) noexcept -> std::expected<vk::raii::Pipeline, ApplicationError> {
+            .and_then([this] [[nodiscard]] (const vk::raii::ShaderModule& shader_module) noexcept -> std::expected<void, ApplicationError> {
                 // TODO: puszek_997 - ShaderModuleCreateInfo extends PipelineShaderStageCreateInfo hmmm
                 const std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_create_info { {
                     {
@@ -747,9 +749,9 @@ private:
 
                 return m_device
                     .createGraphicsPipeline(nullptr, pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>())
+                    .transform(store_into(m_graphics_pipeline))
                     .transform_error(ApplicationError::to_error());
-            })
-            .transform(store_into(m_graphics_pipeline));
+            });
     }
 
     [[nodiscard]] auto create_command_pool() noexcept -> std::expected<void, ApplicationError>
@@ -781,16 +783,16 @@ private:
 
     [[nodiscard]] auto create_synchronization_objects() noexcept -> std::expected<void, ApplicationError>
     {
-        static constexpr vk::SemaphoreCreateInfo SEMAPHORE_CREATE_INFO { };
+        static constexpr vk::SemaphoreCreateInfo SEMAPHORE_CREATE_INFO_COMPLETE_SEMAPHORE { };
 
         return m_device
-            .createSemaphore(SEMAPHORE_CREATE_INFO)
+            .createSemaphore(SEMAPHORE_CREATE_INFO_COMPLETE_SEMAPHORE)
             .transform(store_into(m_present_complete_semaphore))
             .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
-                static constexpr vk::SemaphoreCreateInfo SEMAPHORE_CREATE_INFO2 { };
+                static constexpr vk::SemaphoreCreateInfo SEMAPHORE_CREATE_INFO_FINISHED_SEMAPHORE { };
 
                 return m_device
-                    .createSemaphore(SEMAPHORE_CREATE_INFO2)
+                    .createSemaphore(SEMAPHORE_CREATE_INFO_FINISHED_SEMAPHORE)
                     .transform(store_into(m_render_finished_semaphore));
             })
             .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
