@@ -168,7 +168,7 @@ public:
                       .and_then(std::bind_front(&Application::create_instance, this))
                       .and_then(std::bind_front(&Application::create_surface, this))
                       .and_then(std::bind_front(&Application::pick_physical_device, this))
-                      .and_then(std::bind_front(&Application::create_logical_device, this))
+                      .and_then(std::bind_front(&Application::create_device, this))
                       .and_then(std::bind_front(&Application::create_swap_chain, this))
                       .and_then(std::bind_front(&Application::create_image_views, this))
                       .and_then(std::bind_front(&Application::create_graphics_pipeline, this))
@@ -354,7 +354,7 @@ private:
             });
     }
 
-    [[nodiscard]] auto create_logical_device() noexcept -> std::expected<void, ApplicationError>
+    [[nodiscard]] auto create_device() noexcept -> std::expected<void, ApplicationError>
     {
         static constexpr float QUEUE_PRIORITY { 0.5F };
         const std::array<vk::DeviceQueueCreateInfo, 1> device_queue_create_infos { {
