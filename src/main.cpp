@@ -157,7 +157,14 @@ class Application {
 public:
     enum struct Result : std::uint8_t {
         eSuccess,
-        eError
+        eErrorGlfwInit,
+        eErrorGlfwCreateWindow,
+        eErrorGlfwGetRequiredInstanceExtensions,
+        eErrorNoSuitablePhysicalDeviceFound,
+        eErrorFileOpen,
+        eErrorFileSeek,
+        eErrorFileTell,
+        eErrorFileRead,
     };
 
     using ApplicationError = Error<vk::Result, Result>;
@@ -210,7 +217,7 @@ private:
     [[nodiscard]] auto create_window() noexcept -> std::expected<void, ApplicationError>
     {
         if (glfwInit() == GLFW_FALSE) {
-            return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwInit };
         }
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -237,7 +244,7 @@ private:
 
         m_window = glfwCreateWindow(800, 600, "Hello Triangle", nullptr, nullptr);
         if (m_window == nullptr) {
-            return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwCreateWindow };
         }
 
         return std::expected<void, ApplicationError> { std::in_place };
@@ -256,7 +263,7 @@ private:
         std::uint32_t required_instance_extension_count { 0 };
         const char* const* const required_instance_extension_names { glfwGetRequiredInstanceExtensions(&required_instance_extension_count) };
         if (required_instance_extension_names == nullptr) {
-            return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwGetRequiredInstanceExtensions };
         }
 
         std::vector<const char*> required_instance_extensions {
@@ -350,7 +357,7 @@ private:
                     }
                 }
 
-                return std::expected<void, ApplicationError> { std::unexpect, Result::eError };
+                return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorNoSuitablePhysicalDeviceFound };
             });
     }
 
@@ -569,18 +576,18 @@ private:
     {
         const std::unique_ptr<std::FILE, decltype(&std::fclose)> file { std::fopen(path.string().data(), "rb"), std::fclose };
         if (file == nullptr) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileOpen };
         }
         if (std::fseek(file.get(), 0, SEEK_END) != 0) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeek };
         }
 
         const auto size_in_bytes { std::ftell(file.get()) };
         if (size_in_bytes == -1) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileTell };
         }
         if (std::fseek(file.get(), 0, SEEK_SET) != 0) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeek };
         }
 
         std::vector<T> buffer(static_cast<std::vector<T>::size_type>(static_cast<std::size_t>(size_in_bytes) / sizeof(T)));
@@ -588,7 +595,7 @@ private:
             const std::size_t number_of_objects_read { std::fread(buffer.data(), sizeof(T), static_cast<std::size_t>(buffer.size()), file.get()) };
             number_of_objects_read != static_cast<std::size_t>(buffer.size())
         ) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eError };
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileRead };
         }
         return std::expected<std::vector<T>, ApplicationError> { std::in_place, std::move(buffer) };
     }
