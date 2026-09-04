@@ -174,6 +174,7 @@ public:
                       .and_then(std::bind_front(&Application::create_graphics_pipeline, this))
                       .and_then(std::bind_front(&Application::create_command_pool, this))
                       .and_then(std::bind_front(&Application::allocate_command_buffers, this))
+                      .and_then(std::bind_front(&Application::create_synchronization_objects, this))
                       .has_value();
     }
 
@@ -764,6 +765,32 @@ private:
             .transform_error(ApplicationError::to_error());
     }
 
+    [[nodiscard]] auto create_synchronization_objects() noexcept -> std::expected<void, ApplicationError>
+    {
+        static constexpr vk::SemaphoreCreateInfo SEMAPHORE_CREATE_INFO { };
+
+        return m_device
+            .createSemaphore(SEMAPHORE_CREATE_INFO)
+            .transform(store_into(m_present_complete_semaphore))
+            .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
+                static constexpr vk::SemaphoreCreateInfo SEMAPHORE_CREATE_INFO2 { };
+
+                return m_device
+                    .createSemaphore(SEMAPHORE_CREATE_INFO2)
+                    .transform(store_into(m_render_finished_semaphore));
+            })
+            .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
+                static constexpr vk::FenceCreateInfo FENCE_CREATE_INFO {
+                    .flags = vk::FenceCreateFlagBits::eSignaled,
+                };
+
+                return m_device
+                    .createFence(FENCE_CREATE_INFO)
+                    .transform(store_into(m_draw_fence));
+            })
+            .transform_error(ApplicationError::to_error());
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
@@ -780,6 +807,9 @@ private:
     vk::raii::Pipeline m_graphics_pipeline { nullptr };
     vk::raii::CommandPool m_command_pool { nullptr };
     std::vector<vk::raii::CommandBuffer> m_command_buffers;
+    vk::raii::Semaphore m_present_complete_semaphore { nullptr };
+    vk::raii::Semaphore m_render_finished_semaphore { nullptr };
+    vk::raii::Fence m_draw_fence { nullptr };
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
