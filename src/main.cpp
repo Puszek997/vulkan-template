@@ -796,20 +796,26 @@ private:
     vk::raii::Instance m_instance { nullptr };
     vk::raii::SurfaceKHR m_surface { nullptr };
     vk::raii::PhysicalDevice m_physical_device { nullptr };
+
     vk::raii::Device m_device { nullptr };
     vk::raii::Queue m_queue { nullptr };
+
     vk::SurfaceFormat2KHR m_swap_chain_surface_format2_khr { };
     vk::Extent2D m_swap_chain_extent { };
     vk::raii::SwapchainKHR m_swap_chain { nullptr };
     std::vector<vk::Image> m_swap_chain_images;
     std::vector<vk::raii::ImageView> m_swap_chain_image_views;
+
     vk::raii::PipelineLayout m_pipeline_layout { nullptr };
     vk::raii::Pipeline m_graphics_pipeline { nullptr };
+
     vk::raii::CommandPool m_command_pool { nullptr };
     std::vector<vk::raii::CommandBuffer> m_command_buffers;
+
     vk::raii::Semaphore m_present_complete_semaphore { nullptr };
     vk::raii::Semaphore m_render_finished_semaphore { nullptr };
     vk::raii::Fence m_draw_fence { nullptr };
+    
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
