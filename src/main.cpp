@@ -815,7 +815,7 @@ private:
     vk::raii::Semaphore m_present_complete_semaphore { nullptr };
     vk::raii::Semaphore m_render_finished_semaphore { nullptr };
     vk::raii::Fence m_draw_fence { nullptr };
-    
+
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
