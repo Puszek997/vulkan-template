@@ -430,8 +430,8 @@ private:
                             return surface_capabilities2_khr;
                         }
 
-                        std::int32_t width { };
-                        std::int32_t height { };
+                        std::int32_t width { 0 };
+                        std::int32_t height { 0 };
                         glfwGetFramebufferSize(m_window, &width, &height);
 
                         m_swap_chain_extent = {
