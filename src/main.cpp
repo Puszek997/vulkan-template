@@ -173,6 +173,7 @@ public:
                       .and_then(std::bind_front(&Application::create_image_views, this))
                       .and_then(std::bind_front(&Application::create_graphics_pipeline, this))
                       .and_then(std::bind_front(&Application::create_command_pool, this))
+                      .and_then(std::bind_front(&Application::allocate_command_buffers, this))
                       .has_value();
     }
 
@@ -391,7 +392,7 @@ private:
 
         return m_physical_device
             .createDevice(device_create_info)
-            .transform([this](vk::raii::Device&& device) -> void {
+            .transform([this](vk::raii::Device&& device) noexcept -> void {
                 m_device = std::move(device);
                 m_queue = m_device.getQueue(m_queue_family_index, 0);
             })
@@ -714,7 +715,7 @@ private:
                             .pDepthStencilState = nullptr,
                             .pColorBlendState = &PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
                             .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-                            .layout = m_pipeline_layout,
+                            .layout = *m_pipeline_layout,
                             .renderPass = nullptr,
                             .subpass = 0,
                             .basePipelineHandle = nullptr,
@@ -749,6 +750,20 @@ private:
             .transform_error(ApplicationError::to_error());
     }
 
+    [[nodiscard]] auto allocate_command_buffers() noexcept -> std::expected<void, ApplicationError>
+    {
+        const vk::CommandBufferAllocateInfo command_buffer_allocate_info {
+            .commandPool = *m_command_pool,
+            .level = vk::CommandBufferLevel::ePrimary,
+            .commandBufferCount = 1,
+        };
+
+        return m_device
+            .allocateCommandBuffers(command_buffer_allocate_info)
+            .transform(store_into(m_command_buffers))
+            .transform_error(ApplicationError::to_error());
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
@@ -764,6 +779,7 @@ private:
     vk::raii::PipelineLayout m_pipeline_layout { nullptr };
     vk::raii::Pipeline m_graphics_pipeline { nullptr };
     vk::raii::CommandPool m_command_pool { nullptr };
+    std::vector<vk::raii::CommandBuffer> m_command_buffers;
     std::uint32_t m_queue_family_index { 0 };
     bool m_valid { false };
     [[maybe_unused]] std::array<std::byte, 3> m_padding { };
