@@ -381,7 +381,8 @@ private:
         const vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
             vk::PhysicalDeviceVulkan11Features,
-            vk::PhysicalDeviceVulkan13Features
+            vk::PhysicalDeviceVulkan13Features,
+            vk::PhysicalDeviceMaintenance5Features
         >
             feature_chain {
                 { },
@@ -392,6 +393,9 @@ private:
                     .synchronization2 = vk::True,
                     .dynamicRendering = vk::True,
                 },
+                {
+                    .maintenance5 = vk::True,
+                }
             };
 
         static constexpr std::array<const char*, 1> REQUIRED_DEVICE_EXTENSIONS {
@@ -626,28 +630,24 @@ private:
             .and_then([] [[nodiscard]] static noexcept -> std::expected<std::vector<std::uint32_t>, ApplicationError> {
                 return read_file<std::uint32_t>(std::filesystem::path { "build/third-party/slang-module/shaders/shader.spv" });
             })
-            .and_then([this] [[nodiscard]] (const std::vector<std::uint32_t>& shader_source) noexcept -> std::expected<vk::raii::ShaderModule, ApplicationError> {
+            .and_then([this] [[nodiscard]] (const std::vector<std::uint32_t>& shader_source) noexcept -> std::expected<void, ApplicationError> {
                 const vk::ShaderModuleCreateInfo shader_module_create_info {
                     .codeSize = static_cast<std::size_t>(shader_source.size()) * sizeof(std::uint32_t),
                     .pCode = shader_source.data(),
                 };
 
-                return m_device
-                    .createShaderModule(shader_module_create_info)
-                    .transform_error(ApplicationError::to_error());
-            })
-            .and_then([this] [[nodiscard]] (const vk::raii::ShaderModule& shader_module) noexcept -> std::expected<void, ApplicationError> {
-                // TODO: puszek_997 - ShaderModuleCreateInfo extends PipelineShaderStageCreateInfo hmmm
                 const std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_create_info { {
                     {
+                        .pNext = &shader_module_create_info,
                         .stage = vk::ShaderStageFlagBits::eVertex,
-                        .module = shader_module,
+                        .module = nullptr,
                         .pName = "vert_main",
                         .pSpecializationInfo = nullptr,
                     },
                     {
+                        .pNext = &shader_module_create_info,
                         .stage = vk::ShaderStageFlagBits::eFragment,
-                        .module = shader_module,
+                        .module = nullptr,
                         .pName = "frag_main",
                         .pSpecializationInfo = nullptr,
                     },
