@@ -395,7 +395,7 @@ private:
                 },
                 {
                     .maintenance5 = vk::True,
-                }
+                },
             };
 
         static constexpr std::array<const char*, 1> REQUIRED_DEVICE_EXTENSIONS {
@@ -745,7 +745,7 @@ private:
                             .pColorAttachmentFormats = &m_swap_chain_surface_format2_khr.surfaceFormat.format,
                             .depthAttachmentFormat = vk::Format::eUndefined,
                             .stencilAttachmentFormat = vk::Format::eUndefined,
-                        }
+                        },
                     };
 
                 return m_device
