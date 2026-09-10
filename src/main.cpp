@@ -722,7 +722,7 @@ private:
                 >
                     pipeline_create_info_chain {
                         {
-                            .stageCount = pipeline_shader_stage_create_info.size(),
+                            .stageCount = static_cast<std::uint32_t>(pipeline_shader_stage_create_info.size()),
                             .pStages = pipeline_shader_stage_create_info.data(),
                             .pVertexInputState = &PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
                             .pInputAssemblyState = &PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
