@@ -248,7 +248,6 @@ private:
         glfwWindowHintString(GLFW_WAYLAND_APP_ID, "");
         glfwWindowHintString(GLFW_X11_CLASS_NAME, "");
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "");
-
         m_window = glfwCreateWindow(800, 600, "Hello Triangle", nullptr, nullptr);
         if (m_window == nullptr) {
             return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwCreateWindow };
@@ -264,7 +263,7 @@ private:
             .applicationVersion = vk::makeVersion(0, 1, 0),
             .pEngineName = "No Engine",
             .engineVersion = vk::makeVersion(0, 1, 0),
-            .apiVersion = vk::ApiVersion14
+            .apiVersion = vk::ApiVersion14,
         };
 
         std::uint32_t required_instance_extension_count { 0 };
@@ -386,7 +385,9 @@ private:
         >
             feature_chain {
                 { },
-                { .shaderDrawParameters = vk::True },
+                {
+                    .shaderDrawParameters = vk::True,
+                },
                 {
                     .synchronization2 = vk::True,
                     .dynamicRendering = vk::True,
@@ -394,7 +395,7 @@ private:
             };
 
         static constexpr std::array<const char*, 1> REQUIRED_DEVICE_EXTENSIONS {
-            vk::KHRSwapchainExtensionName
+            vk::KHRSwapchainExtensionName,
         };
 
         const vk::DeviceCreateInfo device_create_info {
@@ -417,7 +418,7 @@ private:
     [[nodiscard]] auto create_swap_chain() noexcept -> std::expected<void, ApplicationError>
     {
         const vk::PhysicalDeviceSurfaceInfo2KHR physical_device_surface_info2_khr {
-            .surface = *m_surface
+            .surface = *m_surface,
         };
 
         return m_physical_device
@@ -519,7 +520,7 @@ private:
                         .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
                         .presentMode = std::get<vk::PresentModeKHR>(swap_chain_properties),
                         .clipped = vk::True,
-                        .oldSwapchain = nullptr
+                        .oldSwapchain = nullptr,
                     };
 
                     return m_device
