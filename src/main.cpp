@@ -39,7 +39,7 @@ public:
     }
 
 private:
-    ReasonType m_reason;
+    ReasonType m_reason { };
 };
 
 template <typename CharT>
