@@ -670,7 +670,7 @@ private:
                     .rasterizerDiscardEnable = vk::False,
                     .polygonMode = vk::PolygonMode::eFill,
                     .cullMode = vk::CullModeFlagBits::eBack,
-                    .frontFace = vk::FrontFace::eCounterClockwise,
+                    .frontFace = vk::FrontFace::eClockwise,
                     .depthBiasEnable = vk::False,
                     .depthBiasConstantFactor = 0.0F,
                     .depthBiasClamp = 0.0F,
@@ -703,7 +703,7 @@ private:
                     .logicOp = vk::LogicOp::eCopy,
                     .attachmentCount = 1,
                     .pAttachments = &PIPELINE_COLOR_BLEND_ATTACHMENT_STATE,
-                    .blendConstants = { { 0.0F, 0.0F, 0.0F, 0.0F } }
+                    .blendConstants = { { 0.0F, 0.0F, 0.0F, 0.0F } },
                 };
 
                 static constexpr std::array<vk::DynamicState, 2> DYNAMIC_STATES {
