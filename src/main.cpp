@@ -367,12 +367,12 @@ private:
 
     [[nodiscard]] auto create_device() noexcept -> std::expected<void, ApplicationError>
     {
-        static constexpr float QUEUE_PRIORITY { 0.5F };
+        static constexpr std::array<float, 1> QUEUE_PRIORITIES { 0.5F };
         const std::array<vk::DeviceQueueCreateInfo, 1> device_queue_create_infos { {
             {
                 .queueFamilyIndex = m_queue_family_index,
-                .queueCount = 1,
-                .pQueuePriorities = &QUEUE_PRIORITY,
+                .queueCount = static_cast<std::uint32_t>(QUEUE_PRIORITIES.size()),
+                .pQueuePriorities = QUEUE_PRIORITIES.data(),
             },
         } };
 
@@ -679,22 +679,24 @@ private:
                     .alphaToOneEnable = vk::False,
                 };
 
-                static constexpr vk::PipelineColorBlendAttachmentState PIPELINE_COLOR_BLEND_ATTACHMENT_STATE {
-                    .blendEnable = vk::False,
-                    .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
-                    .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-                    .colorBlendOp = vk::BlendOp::eAdd,
-                    .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-                    .dstAlphaBlendFactor = vk::BlendFactor::eZero,
-                    .alphaBlendOp = vk::BlendOp::eAdd,
-                    .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
-                };
+                static constexpr std::array<vk::PipelineColorBlendAttachmentState, 1> PIPELINE_COLOR_BLEND_ATTACHMENT_STATES { {
+                    {
+                        .blendEnable = vk::False,
+                        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
+                        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+                        .colorBlendOp = vk::BlendOp::eAdd,
+                        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+                        .dstAlphaBlendFactor = vk::BlendFactor::eZero,
+                        .alphaBlendOp = vk::BlendOp::eAdd,
+                        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+                    },
+                } };
 
                 static constexpr vk::PipelineColorBlendStateCreateInfo PIPELINE_COLOR_BLEND_STATE_CREATE_INFO {
                     .logicOpEnable = vk::False,
                     .logicOp = vk::LogicOp::eCopy,
-                    .attachmentCount = 1,
-                    .pAttachments = &PIPELINE_COLOR_BLEND_ATTACHMENT_STATE,
+                    .attachmentCount = static_cast<std::uint32_t>(PIPELINE_COLOR_BLEND_ATTACHMENT_STATES.size()),
+                    .pAttachments = PIPELINE_COLOR_BLEND_ATTACHMENT_STATES.data(),
                     .blendConstants = { { 0.0F, 0.0F, 0.0F, 0.0F } },
                 };
 
