@@ -410,8 +410,8 @@ private:
 
         return m_physical_device
             .createDevice(device_create_info)
-            .transform([this](vk::raii::Device&& device) noexcept -> void {
-                m_device = std::move(device);
+            .transform(store_into(m_device))
+            .transform([this] noexcept -> void {
                 m_queue = m_device.getQueue(m_queue_family_index, 0);
             })
             .transform_error(ApplicationError::to_error());
