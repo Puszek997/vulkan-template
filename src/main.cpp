@@ -1,7 +1,6 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <cstdio>
 #include <cstdlib>
 
 import vulkan;
@@ -162,9 +161,8 @@ public:
         eErrorGlfwGetRequiredInstanceExtensions,
         eErrorNoSuitablePhysicalDeviceFound,
         eErrorFileOpen,
-        eErrorFileSeek,
-        eErrorFileTell,
-        eErrorFileRead,
+        eErrorFileTellg,
+        eErrorFileSeekg,
     };
 
     using ApplicationError = Error<vk::Result, Result>;
@@ -588,29 +586,23 @@ private:
         requires std::integral<T>
     [[nodiscard]] static auto read_file(const std::filesystem::path& path) noexcept -> std::expected<std::vector<T>, ApplicationError>
     {
-        const std::unique_ptr<std::FILE, decltype(&std::fclose)> file { std::fopen(path.string().data(), "rb"), std::fclose };
-        if (file == nullptr) {
+        std::ifstream file { path, std::ios::ate | std::ios::binary };
+        if (!file.is_open()) {
             return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileOpen };
         }
-        if (std::fseek(file.get(), 0, SEEK_END) != 0) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeek };
+
+        const auto filesize_in_bytes { file.tellg() };
+        if (filesize_in_bytes == -1) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileTellg };
+        }
+        std::vector<T> buffer(static_cast<std::vector<T>::size_type>(static_cast<std::size_t>(filesize_in_bytes) / sizeof(T)));
+
+        file.seekg(0, std::ios::beg);
+        if (!file.good()) {
+            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeekg };
         }
 
-        const auto size_in_bytes { std::ftell(file.get()) };
-        if (size_in_bytes == -1) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileTell };
-        }
-        if (std::fseek(file.get(), 0, SEEK_SET) != 0) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeek };
-        }
-
-        std::vector<T> buffer(static_cast<std::vector<T>::size_type>(static_cast<std::size_t>(size_in_bytes) / sizeof(T)));
-        if (
-            const std::size_t number_of_objects_read { std::fread(buffer.data(), sizeof(T), static_cast<std::size_t>(buffer.size()), file.get()) };
-            number_of_objects_read != static_cast<std::size_t>(buffer.size())
-        ) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileRead };
-        }
+        file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(filesize_in_bytes));
         return std::expected<std::vector<T>, ApplicationError> { std::in_place, std::move(buffer) };
     }
 
