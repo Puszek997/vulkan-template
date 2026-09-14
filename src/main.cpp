@@ -834,7 +834,6 @@ private:
         } };
 
         const vk::DependencyInfo dependency_info {
-            .dependencyFlags = { },
             .memoryBarrierCount = 0,
             .pMemoryBarriers = nullptr,
             .bufferMemoryBarrierCount = 0,
