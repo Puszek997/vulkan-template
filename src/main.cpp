@@ -802,6 +802,50 @@ private:
             .transform_error(ApplicationError::to_error());
     }
 
+    auto transition_image_layout(
+        vk::PipelineStageFlags2 src_stage_mask,
+        vk::AccessFlags2 src_access_mask,
+        vk::PipelineStageFlags2 dst_stage_mask,
+        vk::AccessFlags2 dst_access_mask,
+        vk::ImageLayout old_layout,
+        vk::ImageLayout new_layout,
+        std::uint32_t image_index
+    ) noexcept -> void
+    {
+        const std::array<vk::ImageMemoryBarrier2, 1> image_memory_barriers2 { {
+            {
+                .srcStageMask = src_stage_mask,
+                .srcAccessMask = src_access_mask,
+                .dstStageMask = dst_stage_mask,
+                .dstAccessMask = dst_access_mask,
+                .oldLayout = old_layout,
+                .newLayout = new_layout,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = m_swap_chain_images.at(image_index),
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+            },
+        } };
+
+        const vk::DependencyInfo dependency_info {
+            .dependencyFlags = { },
+            .memoryBarrierCount = 0,
+            .pMemoryBarriers = nullptr,
+            .bufferMemoryBarrierCount = 0,
+            .pBufferMemoryBarriers = nullptr,
+            .imageMemoryBarrierCount = static_cast<std::uint32_t>(image_memory_barriers2.size()),
+            .pImageMemoryBarriers = image_memory_barriers2.data(),
+        };
+
+        m_command_buffers.at(0).pipelineBarrier2(dependency_info);
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
