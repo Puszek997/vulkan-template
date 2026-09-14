@@ -856,7 +856,7 @@ private:
             .and_then([this, &image_index] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
                 transition_image_layout(
                     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                    { }, // srcAccessMask (no need to wait for previous operations)
+                    { },
                     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                     vk::AccessFlagBits2::eColorAttachmentWrite,
                     vk::ImageLayout::eUndefined,
@@ -926,10 +926,10 @@ private:
                 m_command_buffers.at(0).endRendering();
 
                 transition_image_layout(
-                    vk::PipelineStageFlagBits2::eColorAttachmentOutput, // srcStage
-                    vk::AccessFlagBits2::eColorAttachmentWrite, // srcAccessMask
-                    vk::PipelineStageFlagBits2::eBottomOfPipe, // dstStage
-                    { }, // dstAccessMask
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    vk::PipelineStageFlagBits2::eBottomOfPipe,
+                    { },
                     vk::ImageLayout::eColorAttachmentOptimal,
                     vk::ImageLayout::ePresentSrcKHR,
                     image_index
