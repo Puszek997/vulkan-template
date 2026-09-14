@@ -846,6 +846,100 @@ private:
         m_command_buffers.at(0).pipelineBarrier2(dependency_info);
     }
 
+    [[nodiscard]] auto record_command_buffer(std::uint32_t image_index) -> std::expected<void, ApplicationError>
+    {
+        static constexpr vk::CommandBufferBeginInfo COMMAND_BUFFER_BEGIN_INFO {
+            .pInheritanceInfo = nullptr,
+        };
+
+        return m_command_buffers.at(0)
+            .begin(COMMAND_BUFFER_BEGIN_INFO)
+            .and_then([this, &image_index] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
+                transition_image_layout(
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    { }, // srcAccessMask (no need to wait for previous operations)
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    vk::ImageLayout::eUndefined,
+                    vk::ImageLayout::eColorAttachmentOptimal,
+                    image_index
+                );
+
+                const vk::RenderingAttachmentInfo rendering_attachment_info {
+                    .imageView = *m_swap_chain_image_views.at(image_index),
+                    .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .resolveMode = vk::ResolveModeFlagBits::eNone,
+                    .resolveImageView = { },
+                    .resolveImageLayout = vk::ImageLayout::eUndefined,
+                    .loadOp = vk::AttachmentLoadOp::eClear,
+                    .storeOp = vk::AttachmentStoreOp::eStore,
+                    .clearValue = {
+                        .color = {
+                            .float32 = { { 0.0F, 0.0F, 0.0F, 1.0F } },
+                        },
+                    },
+                };
+
+                const vk::RenderingInfo rendering_info {
+                    .renderArea = {
+                        .offset = {
+                            .x = 0,
+                            .y = 0,
+                        },
+                        .extent = m_swap_chain_extent,
+                    },
+                    .layerCount = 1,
+                    .viewMask = 0,
+                    .colorAttachmentCount = 1,
+                    .pColorAttachments = &rendering_attachment_info,
+                    .pDepthAttachment = nullptr,
+                    .pStencilAttachment = nullptr,
+                };
+
+                m_command_buffers.at(0).beginRendering(rendering_info);
+                m_command_buffers.at(0).bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline);
+                m_command_buffers.at(0).setViewport(
+                    0,
+                    {
+                        {
+                            .x = 0.0F,
+                            .y = 0.0F,
+                            .width = static_cast<float>(m_swap_chain_extent.width),
+                            .height = static_cast<float>(m_swap_chain_extent.height),
+                            .minDepth = 0.0F,
+                            .maxDepth = 1.0F,
+                        },
+                    }
+                );
+                m_command_buffers.at(0).setScissor(
+                    0,
+                    {
+                        {
+                            .offset = {
+                                .x = 0,
+                                .y = 0,
+                            },
+                            .extent = m_swap_chain_extent,
+                        },
+                    }
+                );
+                m_command_buffers.at(0).draw(3, 1, 0, 0);
+                m_command_buffers.at(0).endRendering();
+
+                transition_image_layout(
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput, // srcStage
+                    vk::AccessFlagBits2::eColorAttachmentWrite, // srcAccessMask
+                    vk::PipelineStageFlagBits2::eBottomOfPipe, // dstStage
+                    { }, // dstAccessMask
+                    vk::ImageLayout::eColorAttachmentOptimal,
+                    vk::ImageLayout::ePresentSrcKHR,
+                    image_index
+                );
+
+                return m_command_buffers.at(0).end();
+            })
+            .transform_error(ApplicationError::to_error());
+    }
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
