@@ -9,7 +9,6 @@ KeepEmptyLines:
   AtStartOfFile: false
 IncludeBlocks: Regroup
 NamespaceIndentation: All
-ColumnLimit: 160
 AlignAfterOpenBracket: true
 BreakBeforeCloseBracketLoop: true
 BreakBeforeCloseBracketSwitch: true
