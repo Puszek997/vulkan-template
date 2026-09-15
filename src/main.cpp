@@ -417,6 +417,7 @@ private:
             .transform_error(ApplicationError::to_error());
     }
 
+    // TODO: puszek_997 - czy ten tuple to na pewno jest okej?
     [[nodiscard]] auto create_swap_chain() noexcept -> std::expected<void, ApplicationError>
     {
         const vk::PhysicalDeviceSurfaceInfo2KHR physical_device_surface_info2_khr {
@@ -845,6 +846,7 @@ private:
         m_command_buffers.at(0).pipelineBarrier2(dependency_info);
     }
 
+    // TODO: puszek_997 - fix image_index capture
     [[nodiscard]] auto record_command_buffer(std::uint32_t image_index) -> std::expected<void, ApplicationError>
     {
         static constexpr vk::CommandBufferBeginInfo COMMAND_BUFFER_BEGIN_INFO {
@@ -939,6 +941,69 @@ private:
             })
             .transform_error(ApplicationError::to_error());
     }
+
+    // TODO: puszek_997 - fix this function
+    [[nodiscard]] auto draw_frame() noexcept -> std::expected<void, ApplicationError>
+    {
+        if (vk::Result result { m_device.waitForFences(*m_draw_fence, vk::True, std::numeric_limits<std::uint64_t>::max()) };
+            result != vk::Result::eSuccess) {
+            return std::expected<void, ApplicationError> { std::unexpect, result };
+        }
+
+        std::uint32_t image_index_top_level { 0 };
+
+        return m_device
+            .resetFences(*m_draw_fence)
+            .transform_error(ApplicationError::to_error())
+            .and_then([this, &image_index_top_level] [[nodiscard]] noexcept -> std::expected<void, ApplicationError> {
+                // TODO: puszek_997 - czy ten result bedzie wgl handlowany?
+                auto [result, image_index] { m_swap_chain.acquireNextImage(
+                    std::numeric_limits<std::uint64_t>::max(),
+                    m_present_complete_semaphore,
+                    nullptr
+                ) };
+
+                image_index_top_level = image_index;
+
+                return record_command_buffer(image_index);
+            })
+            .and_then([this] [[nodiscard]] noexcept -> std::expected<void, ApplicationError> {
+                return m_queue
+                    .waitIdle()
+                    .transform_error(ApplicationError::to_error());
+            })
+            .and_then([this, &image_index_top_level] [[nodiscard]] noexcept -> std::expected<void, ApplicationError> {
+                const vk::PipelineStageFlags wait_destination_stage_mask { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+                const vk::SubmitInfo submit_info {
+                    .waitSemaphoreCount = 1,
+                    .pWaitSemaphores = &*m_present_complete_semaphore,
+                    .pWaitDstStageMask = &wait_destination_stage_mask,
+                    .commandBufferCount = 1,
+                    .pCommandBuffers = &*m_command_buffers.at(0),
+                    .signalSemaphoreCount = 1,
+                    .pSignalSemaphores = &*m_render_finished_semaphore,
+                };
+
+                // TODO: puszek_997 - zrob na submit2
+                return m_queue
+                    .submit(submit_info, m_draw_fence)
+                    .transform([this, &image_index_top_level] noexcept -> void {
+                        const vk::PresentInfoKHR present_info_khr {
+                            .waitSemaphoreCount = 1,
+                            .pWaitSemaphores = &*m_render_finished_semaphore,
+                            .swapchainCount = 1,
+                            .pSwapchains = &*m_swap_chain,
+                            .pImageIndices = &image_index_top_level,
+                        };
+
+                        if (m_queue.presentKHR(present_info_khr) == vk::Result::eSuboptimalKHR) {
+                            std::println("vk::Queue::presentKHR returned vk::Result::eSuboptimalKHR!");
+                        }
+                    })
+                    .transform_error(ApplicationError::to_error());
+            });
+    }
+
     GLFWwindow* m_window { nullptr };
     vk::raii::Context m_context;
     vk::raii::Instance m_instance { nullptr };
