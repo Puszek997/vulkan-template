@@ -8,8 +8,9 @@ KeepEmptyLines:
   AtStartOfBlock: false
   AtStartOfFile: false
 IncludeBlocks: Regroup
-AlignAfterOpenBracket: true
 NamespaceIndentation: All
+ColumnLimit: 160
+AlignAfterOpenBracket: true
 BreakBeforeCloseBracketLoop: true
 BreakBeforeCloseBracketSwitch: true
 BreakBeforeTemplateCloser: true
