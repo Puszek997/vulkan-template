@@ -269,11 +269,13 @@ private:
             return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwGetRequiredInstanceExtensions };
         }
 
-        std::vector<const char*> required_instance_extensions {
-            required_instance_extension_names,
-            std::ranges::next(required_instance_extension_names, required_instance_extension_count)
-        };
-        required_instance_extensions.emplace_back(vk::KHRGetSurfaceCapabilities2ExtensionName);
+        std::vector<const char*> required_instance_extensions { vk::KHRGetSurfaceCapabilities2ExtensionName };
+        required_instance_extensions.append_range(
+            std::views::counted(
+                required_instance_extension_names,
+                required_instance_extension_count
+            )
+        );
 
         if constexpr (ENABLE_VALIDATION_LAYERS) {
             required_instance_extensions.emplace_back(vk::EXTDebugUtilsExtensionName);
