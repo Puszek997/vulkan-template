@@ -225,7 +225,6 @@ private:
             return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwInit };
         }
 
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
         glfwWindowHint(GLFW_RED_BITS, 8);
@@ -344,7 +343,8 @@ private:
                                 physical_device
                                     .getSurfaceSupportKHR(static_cast<std::uint32_t>(index), *m_surface)
                                     .transform(store_into(surface_support))
-                                    .transform_error(ApplicationError::to_error()) };
+                                    .transform_error(ApplicationError::to_error()),
+                            };
                             !result.has_value()
                         ) {
                             return result;
