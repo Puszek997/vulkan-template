@@ -122,7 +122,7 @@ struct std::formatter<std::variant<Ts...>, CharT> { // NOLINT(cert-dcl58-cpp, bu
     {
         return variant.visit(
             // TODO: puszek_997 - add constexpr after P3391R2 is implemented
-            [&context]<typename T> [[nodiscard]] (T&& value) -> std::basic_format_context<Out, CharT>::iterator {
+            [&context]<typename T> [[nodiscard]] (T&& value) -> std::basic_format_context<Out, CharT>::iterator { // NOLINT(cppcoreguidelines-missing-std-forward)
                 return std::format_to(
                     context.out(),
                     widen<CharT>("variant({})", L"variant({})"),
@@ -139,7 +139,7 @@ template <typename T>
 {
     return [&out]<typename U>
         requires std::assignable_from<T&, U>
-    (U&& value) constexpr noexcept(
+    (U&& value) constexpr noexcept( // NOLINT(cppcoreguidelines-missing-std-forward)
         std::is_nothrow_assignable_v<T&, U>
     ) -> void {
         out = std::forward<U>(value);
