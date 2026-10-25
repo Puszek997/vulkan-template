@@ -146,12 +146,6 @@ template <typename T>
     };
 }
 
-#ifdef NDEBUG
-inline constexpr bool ENABLE_VALIDATION_LAYERS { false };
-#else
-inline constexpr bool ENABLE_VALIDATION_LAYERS { true };
-#endif
-
 class Application {
 public:
     enum class Result : std::uint8_t {
