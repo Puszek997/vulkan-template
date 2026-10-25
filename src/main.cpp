@@ -434,7 +434,7 @@ private:
                             return surface_format.surfaceFormat.format == vk::Format::eB8G8R8A8Srgb
                                 && surface_format.surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
                         }
-                    )
+                    ),
                 };
 
                 m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
@@ -463,7 +463,7 @@ private:
                                     static_cast<std::uint32_t>(height),
                                     surface_capabilities2_khr.surfaceCapabilities.minImageExtent.height,
                                     surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.height
-                                )
+                                ),
                             };
 
                             return surface_capabilities2_khr;
@@ -572,7 +572,8 @@ private:
                         .transform([this](vk::raii::ImageView&& image_view) noexcept -> void {
                             m_swap_chain_image_views.emplace_back(std::move(image_view));
                         })
-                        .transform_error(ApplicationError::to_error()) };
+                        .transform_error(ApplicationError::to_error()),
+                };
                 !result.has_value()
             ) {
                 return result;
@@ -603,7 +604,7 @@ private:
             return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeekg };
         }
 
-        file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(filesize_in_bytes));
+        file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(filesize_in_bytes)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         return std::expected<std::vector<T>, ApplicationError> { std::in_place, std::move(buffer) };
     }
 
@@ -629,28 +630,30 @@ private:
                     .pCode = shader_source.data(),
                 };
 
-                const std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_create_info { {
+                const std::array<vk::PipelineShaderStageCreateInfo, 2> pipeline_shader_stage_create_info {
                     {
-                        .pNext = &shader_module_create_info,
-                        .stage = vk::ShaderStageFlagBits::eVertex,
-                        .module = nullptr,
-                        .pName = "vert_main",
-                        .pSpecializationInfo = nullptr,
+                        {
+                            .pNext = &shader_module_create_info,
+                            .stage = vk::ShaderStageFlagBits::eVertex,
+                            .module = nullptr,
+                            .pName = "vert_main",
+                            .pSpecializationInfo = nullptr,
+                        },
+                        {
+                            .pNext = &shader_module_create_info,
+                            .stage = vk::ShaderStageFlagBits::eFragment,
+                            .module = nullptr,
+                            .pName = "frag_main",
+                            .pSpecializationInfo = nullptr,
+                        },
                     },
-                    {
-                        .pNext = &shader_module_create_info,
-                        .stage = vk::ShaderStageFlagBits::eFragment,
-                        .module = nullptr,
-                        .pName = "frag_main",
-                        .pSpecializationInfo = nullptr,
-                    },
-                } };
+                };
 
                 static constexpr vk::PipelineVertexInputStateCreateInfo PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO { };
 
                 static constexpr vk::PipelineInputAssemblyStateCreateInfo PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO {
                     .topology = vk::PrimitiveTopology::eTriangleList,
-                    .primitiveRestartEnable = vk::False
+                    .primitiveRestartEnable = vk::False,
                 };
 
                 static constexpr vk::PipelineViewportStateCreateInfo PIPELINE_VIEWPORT_STATE_CREATE_INFO {
@@ -680,18 +683,20 @@ private:
                     .alphaToOneEnable = vk::False,
                 };
 
-                static constexpr std::array<vk::PipelineColorBlendAttachmentState, 1> PIPELINE_COLOR_BLEND_ATTACHMENT_STATES { {
+                static constexpr std::array<vk::PipelineColorBlendAttachmentState, 1> PIPELINE_COLOR_BLEND_ATTACHMENT_STATES {
                     {
-                        .blendEnable = vk::False,
-                        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
-                        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-                        .colorBlendOp = vk::BlendOp::eAdd,
-                        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-                        .dstAlphaBlendFactor = vk::BlendFactor::eZero,
-                        .alphaBlendOp = vk::BlendOp::eAdd,
-                        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+                        {
+                            .blendEnable = vk::False,
+                            .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
+                            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+                            .colorBlendOp = vk::BlendOp::eAdd,
+                            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+                            .dstAlphaBlendFactor = vk::BlendFactor::eZero,
+                            .alphaBlendOp = vk::BlendOp::eAdd,
+                            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+                        },
                     },
-                } };
+                };
 
                 static constexpr vk::PipelineColorBlendStateCreateInfo PIPELINE_COLOR_BLEND_STATE_CREATE_INFO {
                     .logicOpEnable = vk::False,
@@ -813,26 +818,28 @@ private:
         std::uint32_t image_index
     ) noexcept -> void
     {
-        const std::array<vk::ImageMemoryBarrier2, 1> image_memory_barriers2 { {
+        const std::array<vk::ImageMemoryBarrier2, 1> image_memory_barriers2 {
             {
-                .srcStageMask = src_stage_mask,
-                .srcAccessMask = src_access_mask,
-                .dstStageMask = dst_stage_mask,
-                .dstAccessMask = dst_access_mask,
-                .oldLayout = old_layout,
-                .newLayout = new_layout,
-                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                .image = m_swap_chain_images.at(image_index),
-                .subresourceRange = {
-                    .aspectMask = vk::ImageAspectFlagBits::eColor,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
+                {
+                    .srcStageMask = src_stage_mask,
+                    .srcAccessMask = src_access_mask,
+                    .dstStageMask = dst_stage_mask,
+                    .dstAccessMask = dst_access_mask,
+                    .oldLayout = old_layout,
+                    .newLayout = new_layout,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = m_swap_chain_images.at(image_index),
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                    },
                 },
             },
-        } };
+        };
 
         const vk::DependencyInfo dependency_info {
             .memoryBarrierCount = 0,
