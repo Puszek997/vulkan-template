@@ -368,13 +368,15 @@ private:
     [[nodiscard]] auto create_device() noexcept -> std::expected<void, ApplicationError>
     {
         static constexpr std::array<float, 1> QUEUE_PRIORITIES { 0.5F };
-        const std::array<vk::DeviceQueueCreateInfo, 1> device_queue_create_infos { {
+        const std::array<vk::DeviceQueueCreateInfo, 1> device_queue_create_infos {
             {
-                .queueFamilyIndex = m_queue_family_index,
-                .queueCount = static_cast<std::uint32_t>(QUEUE_PRIORITIES.size()),
-                .pQueuePriorities = QUEUE_PRIORITIES.data(),
+                {
+                    .queueFamilyIndex = m_queue_family_index,
+                    .queueCount = static_cast<std::uint32_t>(QUEUE_PRIORITIES.size()),
+                    .pQueuePriorities = QUEUE_PRIORITIES.data(),
+                },
             },
-        } };
+        };
 
         const vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
@@ -383,7 +385,9 @@ private:
             vk::PhysicalDeviceMaintenance5Features
         >
             feature_chain {
-                { },
+                {
+
+                },
                 {
                     .shaderDrawParameters = vk::True,
                 },
