@@ -206,6 +206,26 @@ public:
     }
 
 private:
+    static constexpr std::uint32_t MAX_FRAMES_IN_FLIGHT { 2 };
+    static constexpr const char* APPLICATION_NAME { "Hello Triangle" };
+    static constexpr std::uint32_t VULKAN_API_VERSION { vk::ApiVersion14 };
+    static constexpr std::uint32_t WIDTH { 800 };
+    static constexpr std::uint32_t HEIGHT { 600 };
+#ifdef NDEBUG
+    static constexpr std::array<const char*, 1> INSTANCE_EXTENSIONS {
+        vk::KHRGetSurfaceCapabilities2ExtensionName,
+    };
+    static constexpr std::array<const char*, 0> VALIDATION_LAYERS { };
+#else
+    static constexpr std::array<const char*, 2> INSTANCE_EXTENSIONS {
+        vk::KHRGetSurfaceCapabilities2ExtensionName,
+        vk::EXTDebugUtilsExtensionName,
+    };
+    static constexpr std::array<const char*, 1> VALIDATION_LAYERS {
+        "VK_LAYER_KHRONOS_validation",
+    };
+#endif
+
     [[nodiscard]] auto create_window() noexcept -> std::expected<void, ApplicationError>
     {
         glfwInitHint(GLFW_PLATFORM, GLFW_ANY_PLATFORM);
@@ -239,7 +259,13 @@ private:
         glfwWindowHintString(GLFW_WAYLAND_APP_ID, "");
         glfwWindowHintString(GLFW_X11_CLASS_NAME, "");
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "");
-        m_window = glfwCreateWindow(800, 600, "Hello Triangle", nullptr, nullptr);
+        m_window = glfwCreateWindow(
+            static_cast<std::int32_t>(WIDTH),
+            static_cast<std::int32_t>(HEIGHT),
+            APPLICATION_NAME,
+            nullptr,
+            nullptr
+        );
         if (m_window == nullptr) {
             return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwCreateWindow };
         }
@@ -250,11 +276,11 @@ private:
     [[nodiscard]] auto create_instance() noexcept -> std::expected<void, ApplicationError>
     {
         static constexpr vk::ApplicationInfo APPLICATION_INFO {
-            .pApplicationName = "Hello Triangle",
+            .pApplicationName = APPLICATION_NAME,
             .applicationVersion = vk::makeVersion(0, 1, 0),
             .pEngineName = "No Engine",
             .engineVersion = vk::makeVersion(0, 1, 0),
-            .apiVersion = vk::ApiVersion14,
+            .apiVersion = VULKAN_API_VERSION,
         };
 
         std::uint32_t required_instance_extension_count { 0 };
@@ -263,7 +289,9 @@ private:
             return std::expected<void, ApplicationError> { std::unexpect, Result::eErrorGlfwGetRequiredInstanceExtensions };
         }
 
-        std::vector<const char*> required_instance_extensions { vk::KHRGetSurfaceCapabilities2ExtensionName };
+        std::vector<const char*> required_instance_extensions {
+            std::ranges::to<std::vector<const char*>>(INSTANCE_EXTENSIONS),
+        };
         required_instance_extensions.append_range(
             std::views::counted(
                 required_instance_extension_names,
@@ -271,37 +299,18 @@ private:
             )
         );
 
-        if constexpr (ENABLE_VALIDATION_LAYERS) {
-            required_instance_extensions.emplace_back(vk::EXTDebugUtilsExtensionName);
+        const vk::InstanceCreateInfo instance_create_info {
+            .pApplicationInfo = &APPLICATION_INFO,
+            .enabledLayerCount = static_cast<std::uint32_t>(VALIDATION_LAYERS.size()),
+            .ppEnabledLayerNames = VALIDATION_LAYERS.data(),
+            .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
+            .ppEnabledExtensionNames = required_instance_extensions.data(),
+        };
 
-            static constexpr std::array<const char*, 1> VALIDATION_LAYERS {
-                "VK_LAYER_KHRONOS_validation",
-            };
-
-            const vk::InstanceCreateInfo instance_create_info {
-                .pApplicationInfo = &APPLICATION_INFO,
-                .enabledLayerCount = static_cast<std::uint32_t>(VALIDATION_LAYERS.size()),
-                .ppEnabledLayerNames = VALIDATION_LAYERS.data(),
-                .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
-                .ppEnabledExtensionNames = required_instance_extensions.data(),
-            };
-
-            return m_context
-                .createInstance(instance_create_info)
-                .transform(store_into(m_instance))
-                .transform_error(ApplicationError::to_error());
-        } else {
-            const vk::InstanceCreateInfo instance_create_info {
-                .pApplicationInfo = &APPLICATION_INFO,
-                .enabledExtensionCount = static_cast<std::uint32_t>(required_instance_extensions.size()),
-                .ppEnabledExtensionNames = required_instance_extensions.data(),
-            };
-
-            return m_context
-                .createInstance(instance_create_info)
-                .transform(store_into(m_instance))
-                .transform_error(ApplicationError::to_error());
-        }
+        return m_context
+            .createInstance(instance_create_info)
+            .transform(store_into(m_instance))
+            .transform_error(ApplicationError::to_error());
     }
 
     [[nodiscard]] auto create_surface() noexcept -> std::expected<void, ApplicationError>
