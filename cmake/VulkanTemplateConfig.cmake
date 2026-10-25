@@ -115,8 +115,8 @@ set(
     -Wdynamic-exception-spec
     -Wexit-time-destructors
     -Wexpansion-to-defined
-    -Wexperimental-lifetime-safety
-    -Wexperimental-lifetime-safety-suggestions
+    -Wlifetime-safety
+    # -Wlifetime-safety-suggestions
     -Wexplicit-ownership-type
     -Wextra-semi
     -Wextra-semi-stmt
