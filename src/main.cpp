@@ -25,7 +25,7 @@ public:
     {
         return []<typename T>
             requires std::constructible_from<Error, T>
-        [[nodiscard]] (T&& value) static constexpr noexcept(
+        [[nodiscard]] (T&& value) static constexpr noexcept( // NOLINT(cppcoreguidelines-missing-std-forward)
             std::is_nothrow_constructible_v<Error, T>
         ) -> Error {
             return Error { std::forward<T>(value) };
@@ -33,10 +33,9 @@ public:
     }
 
     template <typename Self>
-    [[nodiscard]] constexpr auto reason(this Self&& self) noexcept -> decltype(auto)
+    [[nodiscard]] constexpr auto reason(this Self&& self) noexcept -> auto&&
     {
-        // TODO: puszek_997 - std::forward_like?
-        return (std::forward<Self>(self).m_reason);
+        return std::forward<Self>(self).m_reason;
     }
 
 private:
@@ -155,7 +154,7 @@ inline constexpr bool ENABLE_VALIDATION_LAYERS { true };
 
 class Application {
 public:
-    enum struct Result : std::uint8_t {
+    enum class Result : std::uint8_t {
         eSuccess,
         eErrorGlfwInit,
         eErrorGlfwCreateWindow,
