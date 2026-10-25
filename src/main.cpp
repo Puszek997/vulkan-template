@@ -225,6 +225,9 @@ private:
         "VK_LAYER_KHRONOS_validation",
     };
 #endif
+    static constexpr std::array<const char*, 1> DEVICE_EXTENSIONS {
+        vk::KHRSwapchainExtensionName,
+    };
 
     [[nodiscard]] auto create_window() noexcept -> std::expected<void, ApplicationError>
     {
@@ -405,16 +408,12 @@ private:
                 },
             };
 
-        static constexpr std::array<const char*, 1> REQUIRED_DEVICE_EXTENSIONS {
-            vk::KHRSwapchainExtensionName,
-        };
-
         const vk::DeviceCreateInfo device_create_info {
             .pNext = &feature_chain.get<vk::PhysicalDeviceFeatures2>(),
             .queueCreateInfoCount = static_cast<std::uint32_t>(device_queue_create_infos.size()),
             .pQueueCreateInfos = device_queue_create_infos.data(),
-            .enabledExtensionCount = static_cast<std::uint32_t>(REQUIRED_DEVICE_EXTENSIONS.size()),
-            .ppEnabledExtensionNames = REQUIRED_DEVICE_EXTENSIONS.data(),
+            .enabledExtensionCount = static_cast<std::uint32_t>(DEVICE_EXTENSIONS.size()),
+            .ppEnabledExtensionNames = DEVICE_EXTENSIONS.data(),
         };
 
         return m_physical_device
