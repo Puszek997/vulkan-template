@@ -395,7 +395,7 @@ private:
                                 && static_cast<bool>(features2.get<vk::PhysicalDeviceMaintenance5Features>().maintenance5),
                         };
 
-                        // continue if device is already "wrong"
+                        // continue if device is already not suitable
                         if (!has_vulkan_api_version || !has_extensions || !has_features2) {
                             continue;
                         }
@@ -472,7 +472,12 @@ private:
             .createDevice(device_create_info)
             .transform(store_into(m_device))
             .transform([this] noexcept -> void {
-                m_queue = m_device.getQueue(m_queue_family_index, 0);
+                const vk::DeviceQueueInfo2 device_queue_info2 {
+                    .queueFamilyIndex = m_queue_family_index,
+                    .queueIndex = 0,
+                };
+
+                m_queue = m_device.getQueue2(device_queue_info2);
             })
             .transform_error(ApplicationError::to_error());
     }
