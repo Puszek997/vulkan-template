@@ -355,7 +355,9 @@ private:
                                 physical_device
                                     .enumerateDeviceExtensionProperties()
                                     .transform(
-                                        [] [[nodiscard]] (const std::vector<vk::ExtensionProperties>& available) static constexpr noexcept -> bool {
+                                        [] [[nodiscard]] (
+                                            const std::vector<vk::ExtensionProperties>& available
+                                        ) static constexpr noexcept -> bool {
                                             const std::vector<std::string_view> filtered {
                                                 std::ranges::to<std::vector<std::string_view>>(
                                                     available | std::views::transform(&vk::ExtensionProperties::extensionName)
