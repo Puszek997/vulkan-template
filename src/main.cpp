@@ -494,15 +494,16 @@ private:
         return m_physical_device
             .getSurfaceFormats2KHR(physical_device_surface_info2_khr)
             .transform([this](const std::vector<vk::SurfaceFormat2KHR>& surface_formats) constexpr noexcept -> void {
-                const std::ranges::borrowed_iterator_t<const std::vector<vk::SurfaceFormat2KHR>&> surface_format_it {
-                    std::ranges::find_if(
-                        surface_formats,
-                        [] [[nodiscard]] (const vk::SurfaceFormat2KHR& surface_format) static constexpr noexcept -> bool {
-                            return surface_format.surfaceFormat.format == vk::Format::eB8G8R8A8Srgb
-                                && surface_format.surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
-                        }
-                    ),
+                static constexpr vk::SurfaceFormatKHR SURFACE_FORMAT_KHR {
+                    .format = vk::Format::eB8G8R8A8Srgb,
+                    .colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear,
                 };
+
+                const auto surface_format_it = std::ranges::find(
+                    surface_formats,
+                    SURFACE_FORMAT_KHR,
+                    &vk::SurfaceFormat2KHR::surfaceFormat
+                );
 
                 m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
             })
