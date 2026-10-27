@@ -301,7 +301,8 @@ private:
         }
 
         std::vector<const char*> required_instance_extensions {
-            std::ranges::to<std::vector<const char*>>(INSTANCE_EXTENSIONS),
+            std::from_range,
+            INSTANCE_EXTENSIONS
         };
         required_instance_extensions.append_range(
             std::views::counted(
@@ -359,9 +360,9 @@ private:
                                             const std::vector<vk::ExtensionProperties>& available
                                         ) static constexpr noexcept -> bool {
                                             const std::vector<std::string_view> filtered {
-                                                std::ranges::to<std::vector<std::string_view>>(
-                                                    available | std::views::transform(&vk::ExtensionProperties::extensionName)
-                                                ),
+                                                available
+                                                    | std::views::transform(&vk::ExtensionProperties::extensionName)
+                                                    | std::ranges::to<std::vector<std::string_view>>(),
                                             };
 
                                             return std::ranges::all_of(
