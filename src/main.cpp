@@ -164,16 +164,16 @@ public:
     explicit Application() noexcept
     {
         m_valid = create_window()
-                      .and_then(std::bind_front(&Application::create_instance, this))
-                      .and_then(std::bind_front(&Application::create_surface, this))
-                      .and_then(std::bind_front(&Application::pick_physical_device, this))
-                      .and_then(std::bind_front(&Application::create_device, this))
-                      .and_then(std::bind_front(&Application::create_swap_chain, this))
-                      .and_then(std::bind_front(&Application::create_image_views, this))
-                      .and_then(std::bind_front(&Application::create_graphics_pipeline, this))
-                      .and_then(std::bind_front(&Application::create_command_pool, this))
-                      .and_then(std::bind_front(&Application::allocate_command_buffers, this))
-                      .and_then(std::bind_front(&Application::create_synchronization_objects, this))
+                      .and_then(std::bind_front<&Application::create_instance>(this))
+                      .and_then(std::bind_front<&Application::create_surface>(this))
+                      .and_then(std::bind_front<&Application::pick_physical_device>(this))
+                      .and_then(std::bind_front<&Application::create_device>(this))
+                      .and_then(std::bind_front<&Application::create_swap_chain>(this))
+                      .and_then(std::bind_front<&Application::create_image_views>(this))
+                      .and_then(std::bind_front<&Application::create_graphics_pipeline>(this))
+                      .and_then(std::bind_front<&Application::create_command_pool>(this))
+                      .and_then(std::bind_front<&Application::allocate_command_buffers>(this))
+                      .and_then(std::bind_front<&Application::create_synchronization_objects>(this))
                       .has_value();
     }
 
