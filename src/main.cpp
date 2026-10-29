@@ -500,11 +500,13 @@ private:
                     .colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear,
                 };
 
-                const auto surface_format_it = std::ranges::find(
-                    surface_formats,
-                    SURFACE_FORMAT_KHR,
-                    &vk::SurfaceFormat2KHR::surfaceFormat
-                );
+                const auto surface_format_it {
+                    std::ranges::find(
+                        surface_formats,
+                        SURFACE_FORMAT_KHR,
+                        &vk::SurfaceFormat2KHR::surfaceFormat
+                    ),
+                };
 
                 m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
             })
