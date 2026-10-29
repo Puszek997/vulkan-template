@@ -492,6 +492,10 @@ private:
             .surface = *m_surface,
         };
 
+        using GetSurfaceCapabilities2KHR = std::expected<vk::SurfaceCapabilities2KHR, vk::Result> (
+            vk::raii::PhysicalDevice::*
+        )(const vk::PhysicalDeviceSurfaceInfo2KHR&) const;
+
         return m_physical_device
             .getSurfaceFormats2KHR(physical_device_surface_info2_khr)
             .transform([this](const std::vector<vk::SurfaceFormat2KHR>& surface_formats) constexpr noexcept -> void {
@@ -511,49 +515,48 @@ private:
                 m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
             })
             .and_then(
-                [&physical_device_surface_info2_khr, this] [[nodiscard]] noexcept -> std::expected<std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR>, vk::Result> {
-                    return m_physical_device
-                        .getSurfaceCapabilities2KHR(physical_device_surface_info2_khr)
-                        .transform([this] [[nodiscard]] (const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr) noexcept -> vk::SurfaceCapabilities2KHR {
-                            if (surface_capabilities2_khr.surfaceCapabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
-                                m_swap_chain_extent = surface_capabilities2_khr.surfaceCapabilities.currentExtent;
-                                return surface_capabilities2_khr;
-                            }
+                std::bind_front<
+                    static_cast<GetSurfaceCapabilities2KHR>(&vk::raii::PhysicalDevice::getSurfaceCapabilities2KHR)
+                >(&m_physical_device, physical_device_surface_info2_khr)
+            )
+            .transform([this] [[nodiscard]] (const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr) noexcept -> vk::SurfaceCapabilities2KHR {
+                if (surface_capabilities2_khr.surfaceCapabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
+                    m_swap_chain_extent = surface_capabilities2_khr.surfaceCapabilities.currentExtent;
+                    return surface_capabilities2_khr;
+                }
 
-                            std::int32_t width { 0 };
-                            std::int32_t height { 0 };
-                            glfwGetFramebufferSize(m_window, &width, &height);
+                std::int32_t width { 0 };
+                std::int32_t height { 0 };
+                glfwGetFramebufferSize(m_window, &width, &height);
 
-                            m_swap_chain_extent = {
-                                .width = std::ranges::clamp(
-                                    static_cast<std::uint32_t>(width),
-                                    surface_capabilities2_khr.surfaceCapabilities.minImageExtent.width,
-                                    surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.width
-                                ),
-                                .height = std::ranges::clamp(
-                                    static_cast<std::uint32_t>(height),
-                                    surface_capabilities2_khr.surfaceCapabilities.minImageExtent.height,
-                                    surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.height
-                                ),
-                            };
+                m_swap_chain_extent = {
+                    .width = std::ranges::clamp(
+                        static_cast<std::uint32_t>(width),
+                        surface_capabilities2_khr.surfaceCapabilities.minImageExtent.width,
+                        surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.width
+                    ),
+                    .height = std::ranges::clamp(
+                        static_cast<std::uint32_t>(height),
+                        surface_capabilities2_khr.surfaceCapabilities.minImageExtent.height,
+                        surface_capabilities2_khr.surfaceCapabilities.maxImageExtent.height
+                    ),
+                };
 
-                            return surface_capabilities2_khr;
-                        })
-                        .transform(
-                            [] [[nodiscard]] (
-                                const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr
-                            ) static constexpr noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> {
-                                std::uint32_t min_image_count { std::max<std::uint32_t>(3, surface_capabilities2_khr.surfaceCapabilities.minImageCount) };
-                                if (
-                                    (0 != surface_capabilities2_khr.surfaceCapabilities.maxImageCount)
-                                    && (surface_capabilities2_khr.surfaceCapabilities.maxImageCount < min_image_count)
-                                ) {
-                                    min_image_count = surface_capabilities2_khr.surfaceCapabilities.maxImageCount;
-                                }
+                return surface_capabilities2_khr;
+            })
+            .transform(
+                [] [[nodiscard]] (
+                    const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr
+                ) static constexpr noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> {
+                    std::uint32_t min_image_count { std::max<std::uint32_t>(3, surface_capabilities2_khr.surfaceCapabilities.minImageCount) };
+                    if (
+                        (0 != surface_capabilities2_khr.surfaceCapabilities.maxImageCount)
+                        && (surface_capabilities2_khr.surfaceCapabilities.maxImageCount < min_image_count)
+                    ) {
+                        min_image_count = surface_capabilities2_khr.surfaceCapabilities.maxImageCount;
+                    }
 
-                                return std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> { min_image_count, surface_capabilities2_khr };
-                            }
-                        );
+                    return std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> { min_image_count, surface_capabilities2_khr };
                 }
             )
             .and_then(
