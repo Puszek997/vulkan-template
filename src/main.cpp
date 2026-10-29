@@ -686,13 +686,13 @@ private:
             .pPushConstantRanges = nullptr,
         };
 
+        const std::filesystem::path shader_path { "build/third-party/slang-module/shaders/shader.spv" };
+
         return m_device
             .createPipelineLayout(PIPELINE_LAYOUT_INFO)
             .transform(store_into(m_pipeline_layout))
             .transform_error(ApplicationError::to_error())
-            .and_then([] [[nodiscard]] static noexcept -> std::expected<std::vector<std::uint32_t>, ApplicationError> {
-                return read_file<std::uint32_t>(std::filesystem::path { "build/third-party/slang-module/shaders/shader.spv" });
-            })
+            .and_then(std::bind_front<&Application::read_file<std::uint32_t>>(shader_path))
             .and_then([this] [[nodiscard]] (const std::vector<std::uint32_t>& shader_source) noexcept -> std::expected<void, ApplicationError> {
                 const vk::ShaderModuleCreateInfo shader_module_create_info {
                     .codeSize = static_cast<std::size_t>(shader_source.size()) * sizeof(std::uint32_t),
