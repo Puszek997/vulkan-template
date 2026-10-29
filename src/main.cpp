@@ -662,7 +662,7 @@ private:
             return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileOpen };
         }
 
-        const auto filesize_in_bytes { file.tellg() };
+        const std::ifstream::pos_type filesize_in_bytes { file.tellg() };
         if (filesize_in_bytes == -1) {
             return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileTellg };
         }
