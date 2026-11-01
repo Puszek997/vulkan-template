@@ -351,8 +351,7 @@ private:
                         const bool has_vulkan_api_version { physical_device.getProperties2().properties.apiVersion >= VULKAN_API_VERSION };
 
                         bool has_extensions { false };
-                        if (
-                            std::expected<void, ApplicationError> result {
+                        if (std::expected<void, ApplicationError> result {
                                 physical_device
                                     .enumerateDeviceExtensionProperties()
                                     .transform(
@@ -376,8 +375,7 @@ private:
                                     .transform(store_into(has_extensions))
                                     .transform_error(ApplicationError::to_error()),
                             };
-                            !result.has_value()
-                        ) {
+                            !result.has_value()) {
                             return result;
                         }
 
@@ -406,15 +404,13 @@ private:
                         for (const auto&& [index, queue_family_properties2] :
                              physical_device.getQueueFamilyProperties2() | std::views::enumerate) {
                             vk::Bool32 surface_support { vk::False };
-                            if (
-                                std::expected<void, ApplicationError> result {
+                            if (std::expected<void, ApplicationError> result {
                                     physical_device
                                         .getSurfaceSupportKHR(static_cast<std::uint32_t>(index), *m_surface)
                                         .transform(store_into(surface_support))
                                         .transform_error(ApplicationError::to_error()),
                                 };
-                                !result.has_value()
-                            ) {
+                                !result.has_value()) {
                                 return result;
                             }
 
@@ -608,8 +604,9 @@ private:
     {
         // TODO: puszek_997 - assert(swapChainImageViews.empty()); from vk tutorial
         vk::ImageViewCreateInfo image_view_create_info {
+            .image = nullptr,
             .viewType = vk::ImageViewType::e2D,
-            .format = m_swap_chain_surface_format2_khr.surfaceFormat.format,
+            .format = m_swapchain_surface_format2_khr.surfaceFormat.format,
             .components = {
                 .r = vk::ComponentSwizzle::eIdentity,
                 .g = vk::ComponentSwizzle::eIdentity,
@@ -625,22 +622,19 @@ private:
             },
         };
 
-        m_swap_chain_image_views.reserve(m_swap_chain_images.size());
+        m_swapchain_image_views.reserve(m_swapchain_images.size());
 
-        for (const vk::Image& image : m_swap_chain_images) {
+        for (const vk::Image& image : m_swapchain_images) {
             image_view_create_info.image = image;
-            // TODO: puszek_997 - maybe change this if to macro so it will feel like rust early return "?"
-            if (
-                std::expected<void, ApplicationError> result {
+            if (std::expected<void, ApplicationError> result {
                     m_device
                         .createImageView(image_view_create_info)
                         .transform([this](vk::raii::ImageView&& image_view) noexcept -> void {
-                            m_swap_chain_image_views.emplace_back(std::move(image_view));
+                            m_swapchain_image_views.emplace_back(std::move(image_view));
                         })
                         .transform_error(ApplicationError::to_error()),
                 };
-                !result.has_value()
-            ) {
+                !result.has_value()) {
                 return result;
             }
         }
@@ -648,7 +642,6 @@ private:
         return std::expected<void, ApplicationError> { std::in_place };
     }
 
-    // TODO: puszek_997 - to own function?
     template <typename T>
         requires std::integral<T>
     [[nodiscard]] static auto read_file(const std::filesystem::path& path) noexcept -> std::expected<std::vector<T>, ApplicationError>
