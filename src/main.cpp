@@ -168,7 +168,7 @@ public:
                       .and_then(std::bind_front<&Application::create_surface>(this))
                       .and_then(std::bind_front<&Application::pick_physical_device>(this))
                       .and_then(std::bind_front<&Application::create_device>(this))
-                      .and_then(std::bind_front<&Application::create_swap_chain>(this))
+                      .and_then(std::bind_front<&Application::create_swapchain>(this))
                       .and_then(std::bind_front<&Application::create_image_views>(this))
                       .and_then(std::bind_front<&Application::create_graphics_pipeline>(this))
                       .and_then(std::bind_front<&Application::create_command_pool>(this))
@@ -486,15 +486,17 @@ private:
     }
 
     // TODO: puszek_997 - czy ten tuple to na pewno jest okej?
-    [[nodiscard]] auto create_swap_chain() noexcept -> std::expected<void, ApplicationError>
+    [[nodiscard]] auto create_swapchain() noexcept -> std::expected<void, ApplicationError>
     {
-        const vk::PhysicalDeviceSurfaceInfo2KHR physical_device_surface_info2_khr {
-            .surface = *m_surface,
-        };
-
         using GetSurfaceCapabilities2KHR = std::expected<vk::SurfaceCapabilities2KHR, vk::Result> (
             vk::raii::PhysicalDevice::*
         )(const vk::PhysicalDeviceSurfaceInfo2KHR&) const;
+
+        using SwapchainProperties = std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR>;
+
+        const vk::PhysicalDeviceSurfaceInfo2KHR physical_device_surface_info2_khr {
+            .surface = *m_surface,
+        };
 
         return m_physical_device
             .getSurfaceFormats2KHR(physical_device_surface_info2_khr)
@@ -512,7 +514,7 @@ private:
                     ),
                 };
 
-                m_swap_chain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.at(0);
+                m_swapchain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.front();
             })
             .and_then(
                 std::bind_front<
