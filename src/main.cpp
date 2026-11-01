@@ -485,7 +485,6 @@ private:
             .transform_error(ApplicationError::to_error());
     }
 
-    // TODO: puszek_997 - czy ten tuple to na pewno jest okej?
     [[nodiscard]] auto create_swapchain() noexcept -> std::expected<void, ApplicationError>
     {
         using GetSurfaceCapabilities2KHR = std::expected<vk::SurfaceCapabilities2KHR, vk::Result> (
@@ -523,7 +522,7 @@ private:
             )
             .transform([this] [[nodiscard]] (const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr) noexcept -> vk::SurfaceCapabilities2KHR {
                 if (surface_capabilities2_khr.surfaceCapabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
-                    m_swap_chain_extent = surface_capabilities2_khr.surfaceCapabilities.currentExtent;
+                    m_swapchain_extent = surface_capabilities2_khr.surfaceCapabilities.currentExtent;
                     return surface_capabilities2_khr;
                 }
 
@@ -531,7 +530,7 @@ private:
                 std::int32_t height { 0 };
                 glfwGetFramebufferSize(m_window, &width, &height);
 
-                m_swap_chain_extent = {
+                m_swapchain_extent = {
                     .width = std::ranges::clamp(
                         static_cast<std::uint32_t>(width),
                         surface_capabilities2_khr.surfaceCapabilities.minImageExtent.width,
@@ -546,11 +545,13 @@ private:
 
                 return surface_capabilities2_khr;
             })
-            .transform(
-                [] [[nodiscard]] (
+            .and_then(
+                [this] [[nodiscard]] (
                     const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr
-                ) static constexpr noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> {
-                    std::uint32_t min_image_count { std::max<std::uint32_t>(3, surface_capabilities2_khr.surfaceCapabilities.minImageCount) };
+                ) noexcept -> std::expected<SwapchainProperties, vk::Result> {
+                    std::uint32_t min_image_count {
+                        std::ranges::max(static_cast<std::uint32_t>(3), surface_capabilities2_khr.surfaceCapabilities.minImageCount),
+                    };
                     if (
                         (0 != surface_capabilities2_khr.surfaceCapabilities.maxImageCount)
                         && (surface_capabilities2_khr.surfaceCapabilities.maxImageCount < min_image_count)
@@ -558,59 +559,47 @@ private:
                         min_image_count = surface_capabilities2_khr.surfaceCapabilities.maxImageCount;
                     }
 
-                    return std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR> { min_image_count, surface_capabilities2_khr };
-                }
-            )
-            .and_then(
-                [this] [[nodiscard]] (
-                    std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR>&& swap_chain_properties
-                ) noexcept -> std::expected<std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR>, vk::Result> {
                     return m_physical_device
                         .getSurfacePresentModesKHR(*m_surface)
                         .transform(
-                            [captured_swap_chain_properties = std::move(swap_chain_properties)] [[nodiscard]] (
+                            [&surface_capabilities2_khr, &min_image_count] [[nodiscard]] (
                                 const std::vector<vk::PresentModeKHR>& present_modes
-                            ) mutable noexcept -> std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR> {
-                                return std::tuple_cat(
-                                    std::move(captured_swap_chain_properties),
-                                    std::tuple<vk::PresentModeKHR> {
-                                        std::ranges::contains(present_modes, vk::PresentModeKHR::eMailbox)
-                                            ? vk::PresentModeKHR::eMailbox
-                                            : vk::PresentModeKHR::eFifo }
-                                );
+                            ) constexpr noexcept -> SwapchainProperties {
+                                return SwapchainProperties {
+                                    min_image_count, surface_capabilities2_khr,
+                                    std::ranges::contains(present_modes, vk::PresentModeKHR::eMailbox)
+                                        ? vk::PresentModeKHR::eMailbox
+                                        : vk::PresentModeKHR::eFifo
+                                };
                             }
                         );
                 }
             )
-            .and_then(
-                [this] [[nodiscard]] (
-                    const std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR>& swap_chain_properties
-                ) noexcept -> std::expected<void, vk::Result> {
-                    const vk::SwapchainCreateInfoKHR swap_chain_create_info {
-                        .surface = *m_surface,
-                        .minImageCount = std::get<std::uint32_t>(swap_chain_properties),
-                        .imageFormat = m_swap_chain_surface_format2_khr.surfaceFormat.format,
-                        .imageColorSpace = m_swap_chain_surface_format2_khr.surfaceFormat.colorSpace,
-                        .imageExtent = m_swap_chain_extent,
-                        .imageArrayLayers = 1,
-                        .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
-                        .imageSharingMode = vk::SharingMode::eExclusive,
-                        .preTransform = std::get<vk::SurfaceCapabilities2KHR>(swap_chain_properties).surfaceCapabilities.currentTransform,
-                        .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-                        .presentMode = std::get<vk::PresentModeKHR>(swap_chain_properties),
-                        .clipped = vk::True,
-                        .oldSwapchain = nullptr,
-                    };
+            .and_then([this] [[nodiscard]] (const SwapchainProperties& swapchain_properties) noexcept -> std::expected<void, vk::Result> {
+                const vk::SwapchainCreateInfoKHR swapchain_create_info {
+                    .surface = *m_surface,
+                    .minImageCount = std::get<std::uint32_t>(swapchain_properties),
+                    .imageFormat = m_swapchain_surface_format2_khr.surfaceFormat.format,
+                    .imageColorSpace = m_swapchain_surface_format2_khr.surfaceFormat.colorSpace,
+                    .imageExtent = m_swapchain_extent,
+                    .imageArrayLayers = 1,
+                    .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+                    .imageSharingMode = vk::SharingMode::eExclusive,
+                    .preTransform = std::get<vk::SurfaceCapabilities2KHR>(swapchain_properties).surfaceCapabilities.currentTransform,
+                    .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+                    .presentMode = std::get<vk::PresentModeKHR>(swapchain_properties),
+                    .clipped = vk::True,
+                    .oldSwapchain = nullptr,
+                };
 
-                    return m_device
-                        .createSwapchainKHR(swap_chain_create_info)
-                        .transform(store_into(m_swap_chain));
-                }
-            )
+                return m_device
+                    .createSwapchainKHR(swapchain_create_info)
+                    .transform(store_into(m_swapchain));
+            })
             .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
-                return m_swap_chain
+                return m_swapchain
                     .getImages()
-                    .transform(store_into(m_swap_chain_images));
+                    .transform(store_into(m_swapchain_images));
             })
             .transform_error(ApplicationError::to_error());
     }
