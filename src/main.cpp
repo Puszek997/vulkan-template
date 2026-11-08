@@ -496,9 +496,15 @@ private:
 
     [[nodiscard]] auto create_swapchain() noexcept -> std::expected<void, ApplicationError>
     {
-        using GetSurfaceCapabilities2KHR = std::expected<vk::SurfaceCapabilities2KHR, vk::Result> (
-            vk::raii::PhysicalDevice::*
-        )(const vk::PhysicalDeviceSurfaceInfo2KHR&) const;
+        static constexpr auto GET_SURFACE_CAPABILITIES2_KHR {
+            static_cast<
+                std::expected<vk::SurfaceCapabilities2KHR, vk::Result> (
+                    vk::raii::PhysicalDevice::*
+                )(
+                    const vk::PhysicalDeviceSurfaceInfo2KHR&
+                ) const
+            >(&vk::raii::PhysicalDevice::getSurfaceCapabilities2KHR),
+        };
 
         using SwapchainProperties = std::tuple<std::uint32_t, vk::SurfaceCapabilities2KHR, vk::PresentModeKHR>;
 
@@ -525,9 +531,7 @@ private:
                 m_swapchain_surface_format2_khr = surface_format_it != surface_formats.end() ? *surface_format_it : surface_formats.front();
             })
             .and_then(
-                std::bind_front<
-                    static_cast<GetSurfaceCapabilities2KHR>(&vk::raii::PhysicalDevice::getSurfaceCapabilities2KHR)
-                >(&m_physical_device, physical_device_surface_info2_khr)
+                std::bind_front<GET_SURFACE_CAPABILITIES2_KHR>(&m_physical_device, physical_device_surface_info2_khr)
             )
             .transform([this] [[nodiscard]] (const vk::SurfaceCapabilities2KHR& surface_capabilities2_khr) noexcept -> vk::SurfaceCapabilities2KHR {
                 if (surface_capabilities2_khr.surfaceCapabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
