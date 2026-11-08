@@ -342,67 +342,80 @@ private:
     {
         return m_instance
             .enumeratePhysicalDevices()
+            .transform(
+                std::views::filter([] [[nodiscard]] (const vk::raii::PhysicalDevice& physical_device) static noexcept -> bool {
+                    if (physical_device.getProperties2().properties.apiVersion < VULKAN_API_VERSION) {
+                        return false;
+                    }
+
+                    const PhysicalDeviceFeatureChain features2 {
+                        physical_device
+                            .getFeatures2<
+                                vk::PhysicalDeviceFeatures2,
+                                vk::PhysicalDeviceVulkan11Features,
+                                vk::PhysicalDeviceVulkan13Features,
+                                vk::PhysicalDeviceMaintenance5Features
+                            >(),
+                    };
+
+                    return static_cast<bool>(features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters)
+                        && static_cast<bool>(features2.get<vk::PhysicalDeviceVulkan13Features>().synchronization2)
+                        && static_cast<bool>(features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering)
+                        && static_cast<bool>(features2.get<vk::PhysicalDeviceMaintenance5Features>().maintenance5);
+                })
+                | std::views::as_rvalue
+                | std::ranges::to<std::vector<vk::raii::PhysicalDevice>>()
+            )
+            .and_then(
+                [] [[nodiscard]] (
+                    const std::vector<vk::raii::PhysicalDevice>& physical_devices
+                ) static noexcept -> std::expected<std::vector<vk::raii::PhysicalDevice>, vk::Result> {
+                    std::vector<vk::raii::PhysicalDevice> physical_devices_with_extensions { };
+                    physical_devices_with_extensions.reserve(physical_devices.size());
+
+                    for (const vk::raii::PhysicalDevice& physical_device : physical_devices) {
+                        bool has_extensions { false };
+                        if (std::expected<void, vk::Result> result {
+                                physical_device
+                                    .enumerateDeviceExtensionProperties()
+                                    .transform(
+                                        [] [[nodiscard]] (
+                                            const std::vector<vk::ExtensionProperties>& properties
+                                        ) static constexpr noexcept -> bool {
+                                            std::vector<std::string_view> extension_names {
+                                                properties
+                                                    | std::views::transform(&vk::ExtensionProperties::extensionName)
+                                                    | std::ranges::to<std::vector<std::string_view>>(),
+                                            };
+
+                                            std::ranges::sort(extension_names);
+                                            return std::ranges::includes(extension_names, DEVICE_EXTENSIONS);
+                                        }
+                                    )
+                                    .transform(store_into(has_extensions)),
+                            };
+                            !result.has_value()) {
+                            return std::expected<std::vector<vk::raii::PhysicalDevice>, vk::Result> { std::unexpect, result.error() };
+                        }
+
+                        if (has_extensions) {
+                            physical_devices_with_extensions.emplace_back(physical_device);
+                        }
+                    }
+
+                    return std::expected<std::vector<vk::raii::PhysicalDevice>, vk::Result> { std::in_place, std::move(physical_devices_with_extensions) };
+                }
+            )
             .transform_error(ApplicationError::to_error())
             .and_then(
                 [this] [[nodiscard]] (
                     const std::vector<vk::raii::PhysicalDevice>& physical_devices
                 ) noexcept -> std::expected<void, ApplicationError> {
                     for (const vk::raii::PhysicalDevice& physical_device : physical_devices) {
-                        const bool has_vulkan_api_version { physical_device.getProperties2().properties.apiVersion >= VULKAN_API_VERSION };
-
-                        bool has_extensions { false };
-                        if (std::expected<void, ApplicationError> result {
-                                physical_device
-                                    .enumerateDeviceExtensionProperties()
-                                    .transform(
-                                        [] [[nodiscard]] (
-                                            const std::vector<vk::ExtensionProperties>& available
-                                        ) static constexpr noexcept -> bool {
-                                            const std::vector<std::string_view> filtered {
-                                                available
-                                                    | std::views::transform(&vk::ExtensionProperties::extensionName)
-                                                    | std::ranges::to<std::vector<std::string_view>>(),
-                                            };
-
-                                            return std::ranges::all_of(
-                                                DEVICE_EXTENSIONS,
-                                                [&filtered] [[nodiscard]] (const std::string_view& required) constexpr noexcept -> bool {
-                                                    return std::ranges::contains(filtered, required);
-                                                }
-                                            );
-                                        }
-                                    )
-                                    .transform(store_into(has_extensions))
-                                    .transform_error(ApplicationError::to_error()),
-                            };
-                            !result.has_value()) {
-                            return result;
-                        }
-
-                        const PhysicalDeviceFeatureChain features2 {
-                            physical_device
-                                .getFeatures2<
-                                    vk::PhysicalDeviceFeatures2,
-                                    vk::PhysicalDeviceVulkan11Features,
-                                    vk::PhysicalDeviceVulkan13Features,
-                                    vk::PhysicalDeviceMaintenance5Features
-                                >(),
-                        };
-
-                        const bool has_features2 {
-                            static_cast<bool>(features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters)
-                                && static_cast<bool>(features2.get<vk::PhysicalDeviceVulkan13Features>().synchronization2)
-                                && static_cast<bool>(features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering)
-                                && static_cast<bool>(features2.get<vk::PhysicalDeviceMaintenance5Features>().maintenance5),
-                        };
-
-                        // continue if device is already not suitable
-                        if (!has_vulkan_api_version || !has_extensions || !has_features2) {
-                            continue;
-                        }
-
-                        for (const auto&& [index, queue_family_properties2] :
-                             physical_device.getQueueFamilyProperties2() | std::views::enumerate) {
+                        for (
+                            const auto&& [index, queue_family_properties2] :
+                            physical_device.getQueueFamilyProperties2() | std::views::enumerate
+                        ) {
                             vk::Bool32 surface_support { vk::False };
                             if (std::expected<void, ApplicationError> result {
                                     physical_device
