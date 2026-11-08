@@ -609,17 +609,13 @@ private:
                     .createSwapchainKHR(swapchain_create_info)
                     .transform(store_into(m_swapchain));
             })
-            .and_then([this] [[nodiscard]] noexcept -> std::expected<void, vk::Result> {
-                return m_swapchain
-                    .getImages()
-                    .transform(store_into(m_swapchain_images));
-            })
+            .and_then(std::bind_front<&vk::raii::SwapchainKHR::getImages>(&m_swapchain))
+            .transform(store_into(m_swapchain_images))
             .transform_error(ApplicationError::to_error());
     }
 
     [[nodiscard]] auto create_image_views() noexcept -> std::expected<void, ApplicationError>
     {
-        // TODO: puszek_997 - assert(swapChainImageViews.empty()); from vk tutorial
         vk::ImageViewCreateInfo image_view_create_info {
             .image = nullptr,
             .viewType = vk::ImageViewType::e2D,
@@ -663,24 +659,26 @@ private:
         requires std::integral<T>
     [[nodiscard]] static auto read_file(const std::filesystem::path& path) noexcept -> std::expected<std::vector<T>, ApplicationError>
     {
+        using Vec = std::vector<T>;
+
         std::ifstream file { path, std::ios::ate | std::ios::binary };
         if (!file.is_open()) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileOpen };
+            return std::expected<Vec, ApplicationError> { std::unexpect, Result::eErrorFileOpen };
         }
 
         const std::ifstream::pos_type filesize_in_bytes { file.tellg() };
         if (filesize_in_bytes == -1) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileTellg };
+            return std::expected<Vec, ApplicationError> { std::unexpect, Result::eErrorFileTellg };
         }
-        std::vector<T> buffer(static_cast<std::vector<T>::size_type>(static_cast<std::size_t>(filesize_in_bytes) / sizeof(T)));
+        Vec buffer(static_cast<Vec::size_type>(static_cast<std::size_t>(filesize_in_bytes) / sizeof(T)));
 
         file.seekg(0, std::ios::beg);
         if (!file.good()) {
-            return std::expected<std::vector<T>, ApplicationError> { std::unexpect, Result::eErrorFileSeekg };
+            return std::expected<Vec, ApplicationError> { std::unexpect, Result::eErrorFileSeekg };
         }
 
         file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(filesize_in_bytes)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-        return std::expected<std::vector<T>, ApplicationError> { std::in_place, std::move(buffer) };
+        return std::expected<Vec, ApplicationError> { std::in_place, std::move(buffer) };
     }
 
     [[nodiscard]] auto create_graphics_pipeline() noexcept -> std::expected<void, ApplicationError>
